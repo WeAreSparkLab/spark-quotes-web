@@ -23,7 +23,7 @@ const AppStyles = StyleSheet.create({
   // Styles for IndexScreen (main quote display)
   container: {
     flex: 1,
-    backgroundColor: "#f0f2f5", // Light background for main screen
+    backgroundColor: "transparent", // Light background for main screen
     flexDirection: "column",
     height: "100%", // Retain for web compatibility
   },
@@ -52,10 +52,7 @@ const AppStyles = StyleSheet.create({
     padding: 24,
     marginHorizontal: 16,
     marginVertical: 20,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 16,
+    boxShadow: "0px 8px 16px rgba(0,0,0,0.2)",
     elevation: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -78,7 +75,7 @@ const AppStyles = StyleSheet.create({
     minHeight: 250,
     flexDirection: "column",
   },
-  loadingText: {
+  cardLoadingText: {
     marginTop: 10,
     fontSize: 16,
     color: "#6a0dad",

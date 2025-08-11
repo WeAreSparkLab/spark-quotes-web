@@ -1,19 +1,28 @@
 // components/screens/SubmitQuoteScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from "../common/Ionicons"; 
-import { supabase } from '../../supabaseClient'; 
-import { allCategories } from "../../data"; 
-import AppStyles from "../../styles/AppStyles";
+// FIX: Import the more powerful SafeAreaView from this library to fix layout issues
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from "../../components/common/Ionicons";
+import { supabase } from '../../supabaseClient';
+import { allCategories } from "../../data/data";
 
 export default function SubmitQuoteScreen() {
   const router = useRouter();
   const [quoteText, setQuoteText] = useState('');
   const [quoteAuthor, setQuoteAuthor] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>(allCategories[0] || 'Good Vibes'); // Default category
+  const [selectedCategory, setSelectedCategory] = useState<string>(allCategories[0] || 'Good Vibes');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleGoBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  };
 
   const handleSubmitQuote = async () => {
     if (!quoteText || !quoteAuthor) {
@@ -25,45 +34,43 @@ export default function SubmitQuoteScreen() {
     setMessage('Submitting quote...');
 
     try {
-        const currentUser = (await supabase.auth.getSession()).data.session?.user;
-        const submittedByUserId = currentUser?.id || 'anonymous'; // Get user ID from Supabase Auth
+      const currentUser = (await supabase.auth.getSession()).data.session?.user;
+      const submittedByUserId = currentUser?.id || 'anonymous';
 
-        const { data, error } = await supabase
-            .from('quotes_for_review') // table name in Supabase
-            .insert([
-              {
-                text: quoteText,
-                author: quoteAuthor,
-                category: selectedCategory,
-                submitted_by_user_id: submittedByUserId,
-                status: 'pending', // Initial status for moderation
-              },
-            ]);
+      const { error } = await supabase
+        .from('quotes_for_review')
+        .insert([
+          {
+            text: quoteText,
+            author: quoteAuthor,
+            category: selectedCategory,
+            submitted_by_user_id: submittedByUserId,
+            status: 'pending',
+          },
+        ]);
 
-        if (error) {
-            throw error;
-        }
+      if (error) {
+        throw error;
+      }
 
-        setMessage('Quote submitted successfully for review!');
-        setQuoteText('');
-        setQuoteAuthor('');
-        setTimeout(() => {
-            router.back();
-        }, 2000);
+      setMessage('Quote submitted successfully for review!');
+      setQuoteText('');
+      setQuoteAuthor('');
+      setTimeout(handleGoBack, 2000);
 
     } catch (error: any) {
-        console.error("Error submitting quote:", error);
-        setMessage(`Failed to submit quote: ${error.message || error.toString()}`);
+      console.error("Error submitting quote:", error);
+      setMessage(`Failed to submit quote: ${error.message || error.toString()}`);
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
+          <Text style={{ color: '#FFFFFF' }}>Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>Submit Your Quote</Text>
       </View>
@@ -71,7 +78,7 @@ export default function SubmitQuoteScreen() {
       <ScrollView contentContainerStyle={styles.formContainer}>
         <Text style={styles.label}>Quote Text:</Text>
         <TextInput
-          style={styles.input}
+          style={[styles.input, { minHeight: 100 }]} // Taller input for the quote
           multiline
           placeholder="Enter your inspiring quote here..."
           placeholderTextColor="#CCCCCC"
@@ -81,7 +88,7 @@ export default function SubmitQuoteScreen() {
 
         <Text style={styles.label}>Author:</Text>
         <TextInput
-          style={styles.input}
+          style={styles.input} // Standard height for the author
           placeholder="Who said it? (e.g., Anonymous)"
           placeholderTextColor="#CCCCCC"
           value={quoteAuthor}
@@ -100,10 +107,10 @@ export default function SubmitQuoteScreen() {
               onPress={() => setSelectedCategory(cat)}
             >
               <Text style={[
-                  styles.categoryButtonText,
-                  selectedCategory === cat && styles.selectedCategoryButtonText,
+                styles.categoryButtonText,
+                selectedCategory === cat && styles.selectedCategoryButtonText,
               ]}>
-                  {cat}
+                {cat}
               </Text>
             </TouchableOpacity>
           ))}
@@ -116,9 +123,13 @@ export default function SubmitQuoteScreen() {
           onPress={handleSubmitQuote}
           disabled={isSubmitting}
         >
-          <Text style={styles.submitButtonText}>
-            {isSubmitting ? 'Submitting...' : 'Submit Quote for Review'}
-          </Text>
+          {isSubmitting ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.submitButtonText}>
+              Submit Quote for Review
+            </Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -129,62 +140,63 @@ export default function SubmitQuoteScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0E0F1D', // Dark background
+    backgroundColor: '#0E0F1D',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 40,
-    paddingBottom: 20,
+    paddingTop: 20, // Reduced padding
+    paddingBottom: 10, // Reduced padding
   },
   backButton: {
     marginRight: 16,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22, // Slightly smaller title
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   formContainer: {
-    padding: 20,
+    paddingHorizontal: 20, // Keep horizontal padding
+    paddingBottom: 20, // Add some bottom padding
   },
   label: {
     fontSize: 16,
     fontWeight: '600',
     color: '#E0E0E0',
-    marginBottom: 8,
-    marginTop: 15,
+    marginBottom: 6, // Reduced margin
+    marginTop: 12, // Reduced margin
   },
   input: {
     backgroundColor: '#222034',
     borderRadius: 8,
-    padding: 15,
+    padding: 12, // Reduced padding
     fontSize: 16,
     color: '#FFFFFF',
-    minHeight: 50,
-    marginBottom: 15,
+    minHeight: 40, // Set a base min height
+    marginBottom: 12, // Reduced margin
     borderColor: '#4D637D',
     borderWidth: 1,
   },
   categoryPicker: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start', // Align to start for better flow
-    marginBottom: 15,
+    justifyContent: 'flex-start',
+    marginBottom: 12, // Reduced margin
   },
   categoryButton: {
     backgroundColor: '#4D637D',
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 15,
+    borderRadius: 8, // Slightly smaller radius
+    paddingVertical: 8, // Reduced padding
+    paddingHorizontal: 12, // Reduced padding
     marginRight: 8,
     marginBottom: 8,
     borderWidth: 1,
     borderColor: 'transparent',
   },
   selectedCategoryButton: {
-    backgroundColor: '#6672E7', // Accent color
+    backgroundColor: '#6672E7',
     borderColor: '#6672E7',
   },
   categoryButtonText: {
@@ -197,21 +209,21 @@ const styles = StyleSheet.create({
   },
   message: {
     fontSize: 14,
-    color: '#FFD700', // Warning/info color
+    color: '#FFD700',
     textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 8, // Reduced margin
+    marginBottom: 8, // Reduced margin
   },
   submitButton: {
     backgroundColor: '#6672E7',
-    borderRadius: 12,
-    padding: 15,
+    borderRadius: 10, // Slightly smaller radius
+    padding: 12, // Reduced padding
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 15, // Reduced margin
   },
   submitButtonText: {
     color: '#FFFFFF',
-    fontSize: 18,
+    fontSize: 16, // Slightly smaller text
     fontWeight: 'bold',
   },
 });

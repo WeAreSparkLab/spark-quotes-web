@@ -1,0 +1,82 @@
+// app.config.js
+module.exports = {
+  expo: {
+    name: "Spark Quotes",
+    slug: "inspire-quotes-motivate",
+    version: "1.1.0",
+    orientation: "portrait",
+    icon: "./assets/images/icon.png",
+    scheme: "testconnectionapp",
+    userInterfaceStyle: "automatic",
+    splash: {
+      image: "./assets/images/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#ffffff",
+    },
+    assetBundlePatterns: ["**/*"],
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: "com.SparkLab.SparkQuotes",
+      buildNumber: "1",
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false,
+      },
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: "./assets/images/adaptive-icon.png",
+        backgroundColor: "#ffffff",
+      },
+      package: "com.SparkLab.SparkQuotes",
+      versionCode: 25,
+      edgeToEdgeEnabled: true,
+    },
+    web: {
+      bundler: "metro",
+      output: "static",
+      favicon: "./assets/images/favicon.png",
+    },
+    plugins: [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          image: "./assets/images/splash.png",
+          resizeMode: "contain",
+          backgroundColor: "#ffffff",
+        },
+      ],
+      "expo-web-browser",
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          android: {
+            minifyEnabled: true,
+            proguardRules: [
+              "-keep class com.SparkLab.SparkQuotes.** { *; }",
+              "-dontwarn com.SparkLab.SparkQuotes.**",
+              "-keep class com.facebook.react.** { *; }",
+              "-dontwarn com.facebook.react.**",
+              "-keep class expo.modules.** { *; }",
+              "-dontwarn expo.modules.**",
+              "-keep class expo.modules.notifications.** { *; }",
+              "-dontwarn expo.modules.notifications.**",
+            ],
+          },
+        },
+      ],
+    ],
+    experiments: {
+      typedRoutes: true,
+    },
+    extra: {
+      router: {
+        origin: false,
+      },
+      eas: {
+        projectId: "90064a30-765b-42b3-8736-ce171e572c09",
+      },
+    },
+  },
+};
