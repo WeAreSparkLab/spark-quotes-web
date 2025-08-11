@@ -1,0 +1,201 @@
+// app/favorites.tsx
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Stack, useRouter, useFocusEffect } from "expo-router";
+import { Ionicons } from "../components/common/Ionicons";
+import AppStyles from "../styles/AppStyles";
+import { useSupabase } from "./_layout";
+import { getFavoriteQuoteIds } from "../services/supabaseFavorites";
+import { supabase } from "../supabaseClient";
+
+// Re-use the Quote interface for consistency
+interface Quote {
+  id: string;
+  text: string;
+  author: string;
+  category: string;
+}
+
+export default function FavoritesScreen() {
+  const router = useRouter();
+  const { userId, session } = useSupabase(); // Get userId and session
+  const [favoriteQuotes, setFavoriteQuotes] = useState<Quote[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchFavoriteQuotes = useCallback(async () => {
+    if (!userId) {
+      setError("Please log in to view your favorite quotes.");
+      setFavoriteQuotes([]); // Clear previous favorites if logged out
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+    try {
+      // 1. Get the IDs of favorite quotes for the current user
+      const favoriteIds = await getFavoriteQuoteIds(userId);
+
+      if (favoriteIds.length === 0) {
+        setFavoriteQuotes([]);
+        return;
+      }
+
+      // 2. Fetch the full quote details from the 'approved_quotes' table
+      const { data, error: fetchError } = await supabase
+        .from("approved_quotes")
+        .select("id, text, author, category")
+        .in("id", favoriteIds); // Filter by the favorite IDs
+
+      if (fetchError) {
+        throw new Error(fetchError.message);
+      }
+
+      setFavoriteQuotes(data || []);
+    } catch (e: any) {
+      console.error("Error fetching favorite quotes:", e.message);
+      setError("Failed to load favorite quotes. " + e.message);
+      setFavoriteQuotes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]); // Re-run if userId changes
+
+  // Use useFocusEffect to refetch when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      fetchFavoriteQuotes();
+    }, [fetchFavoriteQuotes])
+  );
+
+  const renderQuoteItem = ({ item }: { item: Quote }) => (
+    <View style={styles.quoteCard}>
+      <View style={[AppStyles.categoryBadge, { backgroundColor: "#e63946" }]}>
+        <Text style={AppStyles.categoryText}>{item.category}</Text>
+      </View>
+      <Text style={styles.quoteText}>"{item.text}"</Text>
+      <Text style={styles.authorText}>- {item.author}</Text>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.sceneContainer}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
+        </TouchableOpacity>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.sceneTitle}>Favorite Quotes</Text>
+        </View>
+      </View>
+
+      {isLoading ? (
+        <ActivityIndicator size="large" color="#FFFFFF" style={styles.loader} />
+      ) : error ? (
+        <Text style={styles.errorText}>{error}</Text>
+      ) : favoriteQuotes.length === 0 ? (
+        <Text style={styles.emptyText}>
+          No favorite quotes yet! Tap the heart icon on your daily quotes to
+          save them.
+        </Text>
+      ) : (
+        <FlatList
+          data={favoriteQuotes}
+          renderItem={renderQuoteItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.flatListContent}
+        />
+      )}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  sceneContainer: {
+    flex: 1,
+    backgroundColor: "#0C0A1A",
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#0C0A1A',
+    justifyContent: 'flex-start',
+  },
+  headerTitleContainer: {
+      flex: 1,
+      alignItems: 'center',
+      marginRight: 24,
+  },
+  sceneTitle: {
+    ...AppStyles.title,
+    color: "#FFFFFF",
+    textShadowColor: "rgba(96, 116, 245, 0.5)",
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 10,
+    marginLeft: 16, 
+  },
+  backButton: {
+    padding: 10,
+  },
+  loader: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    color: "#E63946",
+    textAlign: "center",
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    color: "#D0D0D0",
+    textAlign: "center",
+    marginTop: 50,
+    fontSize: 16,
+    paddingHorizontal: 20,
+  },
+  flatListContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
+    paddingTop: 60,
+    paddingEnd: 60,
+    paddingStart: 60,
+  },
+  quoteCard: {
+    backgroundColor: "rgba(12, 10, 26, 0.8)",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+    alignItems: "center",
+  },
+  quoteText: {
+    fontSize: 18,
+    fontStyle: "italic",
+    textAlign: "center",
+    color: "#E0E0E0",
+    marginBottom: 8,
+  },
+  authorText: {
+    fontSize: 14,
+    fontWeight: "bold",
+    color: "#B0B0B0",
+    textAlign: "center",
+  },
+});

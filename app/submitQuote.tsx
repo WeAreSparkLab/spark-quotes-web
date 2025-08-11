@@ -1,5 +1,12 @@
 // app/submitQuote.tsx
 // This file acts as the route for /submitQuote
-import SubmitQuoteScreen from "./components/screens/SubmitQuoteScreen"; 
+import SubmitQuoteScreen from "../components/screens/SubmitQuoteScreen"; // Corrected import path
+import { Stack } from "expo-router";
 
-export default SubmitQuoteScreen;
+export default function SubmitQuoteRoute() {
+  return (
+    <>
+      <SubmitQuoteScreen />
+    </>
+  );
+}

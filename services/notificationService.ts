@@ -1,7 +1,7 @@
 // services/notificationService.ts
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
-import { quotes } from "../app/data";
+import { quotes } from "../data/data";
 
 interface NotificationHandlerResult {
   shouldShowAlert?: boolean;
