@@ -1,0 +1,3 @@
+Sitemap: https://quotes.wearesparklab.com/sitemap.txt
+User-agent: *
+Allow: /
