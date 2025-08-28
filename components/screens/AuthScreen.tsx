@@ -1,15 +1,19 @@
-// app/auth.tsx
+// app/AuthScreen.tsx 
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import {
+  View, Text, TextInput, TouchableOpacity,
+  StyleSheet, SafeAreaView, ActivityIndicator
+} from 'react-native';
 import { supabase } from '../../supabaseClient';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 export default function AuthScreen() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  const [isLogin, setIsLogin] = useState(true); // State to toggle between login and signup
+  const [isLogin, setIsLogin] = useState(true);
 
   const handleAuth = async () => {
     setLoading(true);
@@ -17,19 +21,28 @@ export default function AuthScreen() {
 
     try {
       if (isLogin) {
-        // Sign In
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
         if (error) throw error;
+
+
         setMessage('Signed in successfully!');
+        router.replace('/');
       } else {
-        // Sign Up
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password,
+        });
         if (error) throw error;
+
+
         setMessage('Signed up successfully! Please check your email to confirm your account.');
       }
     } catch (error: any) {
-      console.error("Auth error:", error);
       setMessage(error.message || 'An unexpected error occurred. Please try again.');
+      console.error("Auth error:", error);
     } finally {
       setLoading(false);
     }
@@ -39,7 +52,9 @@ export default function AuthScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>{isLogin ? 'Welcome Back!' : 'Join Spark Quotes'}</Text>
-        <Text style={styles.subtitle}>{isLogin ? 'Sign in to continue' : 'Sign up to get started'}</Text>
+        <Text style={styles.subtitle}>
+          {isLogin ? 'Sign in to continue' : 'Sign up to get started'}
+        </Text>
       </View>
 
       <View style={styles.formContainer}>
@@ -61,7 +76,7 @@ export default function AuthScreen() {
           onChangeText={setPassword}
         />
 
-        {message ? <Text style={styles.message}>{message}</Text> : null}
+        {!!message && <Text style={styles.message}>{message}</Text>}
 
         <TouchableOpacity
           style={styles.authButton}
@@ -79,7 +94,7 @@ export default function AuthScreen() {
 
         <TouchableOpacity
           style={styles.toggleButton}
-          onPress={() => setIsLogin(!isLogin)}
+          onPress={() => { setIsLogin(!isLogin); setMessage(''); }}
           disabled={loading}
         >
           <Text style={styles.toggleButtonText}>

@@ -1,12 +1,12 @@
 // app/submitQuote.tsx
-// This file acts as the route for /submitQuote
-import SubmitQuoteScreen from "../components/screens/SubmitQuoteScreen"; // Corrected import path
-import { Stack } from "expo-router";
+import { View, StyleSheet } from "react-native";
+import SubmitQuoteScreen from "../components/screens/SubmitQuoteScreen";
 
 export default function SubmitQuoteRoute() {
   return (
-    <>
+    <View style={styles.container}>
       <SubmitQuoteScreen />
-    </>
+    </View>
   );
 }
+const styles = StyleSheet.create({ container: { flex: 1 } });

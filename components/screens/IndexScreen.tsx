@@ -9,7 +9,7 @@ import {
   Image,
   ScrollView,
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../supabaseClient";
 import { allCategories } from "../../data/data";
 import { Ionicons } from "../common/Ionicons";
@@ -38,10 +38,16 @@ interface Quote {
   category: string;
 }
 
+// Local fallback so the app never looks "broken" if network/db is empty
+const FALLBACK_QUOTES: Quote[] = [
+  { id: "f1", text: "Keep going. You’re closer than you think.", author: "Unknown", category: "Good Vibes" },
+  { id: "f2", text: "Small steps every day.", author: "Unknown", category: "Discipline" },
+  { id: "f3", text: "Progress over perfection.", author: "Unknown", category: "Mindset" },
+];
+
 export default function IndexScreen() {
   const router = useRouter();
   const { userId } = useSupabase();
-  const insets = useSafeAreaInsets();
 
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,14 +61,18 @@ export default function IndexScreen() {
 
   const cardAnimatedStyle = useAnimatedStyle(() => {
     const translateY = interpolate(cardAnimation.value, [0, 1], [0, -8]);
-    // no rotate to avoid clipping
     return { transform: [{ translateY }] };
   });
+
+  const pickFallback = () =>
+    FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
 
   const getQuoteOfTheDay = useCallback(async () => {
     setIsLoading(true);
     const today = new Date().toISOString().split("T")[0];
+
     try {
+      // 1) Use cached “quote of the day” if same day
       const storedQuoteData = await AsyncStorage.getItem("quoteOfTheDay");
       if (storedQuoteData) {
         const { quote, date } = JSON.parse(storedQuoteData);
@@ -72,58 +82,60 @@ export default function IndexScreen() {
         }
       }
 
+      // 2) Get selected topics (or all)
       const storedTopics = await AsyncStorage.getItem("selectedTopics");
-      const selectedTopics = storedTopics ? JSON.parse(storedTopics) : allCategories;
+      const selectedTopics: string[] = storedTopics ? JSON.parse(storedTopics) : allCategories;
 
+      // 3) Try Supabase first
       const { data, error } = await supabase
         .from("approved_quotes")
         .select("id, text, author, category")
         .in("category", selectedTopics.length > 0 ? selectedTopics : allCategories);
 
-      if (error || !data || !data.length) {
-        throw new Error(error?.message || "No quotes available for your selected topics.");
+      let newQuote: Quote | null = null;
+
+      if (!error && data && data.length > 0) {
+        newQuote = data[Math.floor(Math.random() * data.length)] as Quote;
+      } else {
+        // 4) Fallback if network/table empty
+        newQuote = pickFallback();
       }
 
-      const newQuote = data[Math.floor(Math.random() * data.length)];
       setCurrentQuote(newQuote);
-      await AsyncStorage.setItem(
-        "quoteOfTheDay",
-        JSON.stringify({ quote: newQuote, date: today })
-      );
+
+      // 5) Cache for the day so app is instant next launch
+      await AsyncStorage.setItem("quoteOfTheDay", JSON.stringify({ quote: newQuote, date: today }));
     } catch {
-      setCurrentQuote({
-        id: "error",
-        text: "Could not load a quote.",
-        author: "App Error",
-        category: "Error",
-      });
+      const fb = pickFallback();
+      setCurrentQuote(fb);
+      await AsyncStorage.setItem("quoteOfTheDay", JSON.stringify({ quote: fb, date: today }));
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  // Keep favorite heart state in sync when quote/user changes
   useEffect(() => {
     const checkFavoriteStatus = async () => {
-      if (userId && currentQuote?.id && currentQuote.id !== "error") {
+      if (userId && currentQuote?.id) {
         const favorited = await isQuoteFavorited(userId, currentQuote.id);
         setIsFavorited(favorited);
-      } else if (!userId) {
+      } else {
         setIsFavorited(false);
       }
     };
     checkFavoriteStatus();
   }, [userId, currentQuote?.id]);
 
+  // --- Add back this: Favorite toggle handler
   const handleFavoriteToggle = async () => {
     if (!userId) {
       alert("Please log in to favorite quotes!");
       return;
     }
-    if (!currentQuote || !currentQuote.id || currentQuote.id === "error") {
-      return;
-    }
+    if (!currentQuote?.id) return;
 
-    let success;
+    let success: boolean;
     if (isFavorited) {
       success = await removeFavoriteQuote(userId, currentQuote.id);
       if (success) setIsFavorited(false);
@@ -133,6 +145,21 @@ export default function IndexScreen() {
     }
     if (!success) {
       alert("Failed to update favorite status.");
+    }
+  };
+
+  // --- Simple UGC “Report” action (stores a report row)
+  const handleReport = async () => {
+    if (!currentQuote?.id) return;
+    try {
+      await supabase.from("quote_reports").insert({
+        quote_id: currentQuote.id,
+        reason: "inappropriate",
+        reported_by_user_id: userId ?? null,
+      });
+      alert("Thanks — report submitted.");
+    } catch {
+      alert("Could not submit report. Please try again later.");
     }
   };
 
@@ -147,21 +174,12 @@ export default function IndexScreen() {
       <Starfield speed="fast" starCount={100} />
 
       <View style={{ flex: 1, zIndex: 1 }}>
-        {/* Fill behind translucent StatusBar and push content below it */}
-        <View
-          style={[
-            AppStyles.header,
-            { backgroundColor: "#0C0A1A" },
-          ]}
-        >
+        <View style={[AppStyles.header, { backgroundColor: "#0C0A1A" }]}>
           <Text style={styles.sceneTitle}>Spark Quotes</Text>
           <Text style={styles.sceneSubtitle}>Your Quote of the Day</Text>
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.scrollContentContainer}
-          alwaysBounceVertical={false}
-        >
+        <ScrollView contentContainerStyle={styles.scrollContentContainer} alwaysBounceVertical={false}>
           {isLoading ? (
             <ActivityIndicator size="large" color="#FFFFFF" />
           ) : currentQuote ? (
@@ -171,19 +189,20 @@ export default function IndexScreen() {
                 style={styles.starImage}
               />
               <Animated.View style={[styles.quoteCard, cardAnimatedStyle]}>
-                <View
-                  style={[AppStyles.categoryBadge, { backgroundColor: "#e63946" }]}
-                >
-                  <Text style={AppStyles.categoryText}>
-                    {currentQuote.category}
-                  </Text>
+                {/* Category badge */}
+                <View style={[AppStyles.categoryBadge, { backgroundColor: "#e63946" }]}>
+                  <Text style={AppStyles.categoryText}>{currentQuote.category}</Text>
                 </View>
 
+                {/* Report (UGC) */}
+                <TouchableOpacity onPress={handleReport} style={styles.reportButton}>
+                  <Ionicons name="flag-outline" size={22} color="#9B9B9B" />
+                  <Text style={styles.reportText}>Report</Text>
+                </TouchableOpacity>
+
+                {/* Favorite (requires login) */}
                 {userId && (
-                  <TouchableOpacity
-                    onPress={handleFavoriteToggle}
-                    style={styles.favoriteButton}
-                  >
+                  <TouchableOpacity onPress={handleFavoriteToggle} style={styles.favoriteButton}>
                     <Ionicons
                       name={isFavorited ? "heart" : "heart-outline"}
                       size={30}
@@ -201,34 +220,22 @@ export default function IndexScreen() {
 
         {/* Bottom nav with its own bottom safe-area */}
         <SafeAreaView edges={["bottom"]} style={styles.navBar}>
-          <TouchableOpacity
-            style={AppStyles.navButton}
-            onPress={() => router.push("/topics")}
-          >
+          <TouchableOpacity style={AppStyles.navButton} onPress={() => router.push("/topics")}>
             <Ionicons name="list" color="#FFFFFF" size={24} />
             <Text style={styles.navText}>Topics</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={AppStyles.navButton}
-            onPress={() => router.push("/favorites")}
-          >
+          <TouchableOpacity style={AppStyles.navButton} onPress={() => router.push("/favorites")}>
             <Ionicons name="heart" color="#FFFFFF" size={24} />
             <Text style={styles.navText}>Favorites</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={AppStyles.navButton}
-            onPress={() => router.push("/submitQuote")}
-          >
+          <TouchableOpacity style={AppStyles.navButton} onPress={() => router.push("/submitQuote")}>
             <Ionicons name="add" color="#FFFFFF" size={24} />
             <Text style={styles.navText}>Add Quote</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={AppStyles.navButton}
-            onPress={() => router.push("/settings")}
-          >
+          <TouchableOpacity style={AppStyles.navButton} onPress={() => router.push("/settings")}>
             <Ionicons name="settings" color="#FFFFFF" size={24} />
             <Text style={styles.navText}>Settings</Text>
           </TouchableOpacity>
@@ -306,6 +313,20 @@ const styles = StyleSheet.create({
     right: 10,
     padding: 5,
     zIndex: 10,
+  },
+  reportButton: {
+    position: "absolute",
+    top: 12,
+    left: 12,
+    padding: 5,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  reportText: {
+    color: "#9B9B9B",
+    fontSize: 12,
+    fontWeight: "600",
+    marginLeft: 6,
   },
   navBar: {
     flexDirection: "row",

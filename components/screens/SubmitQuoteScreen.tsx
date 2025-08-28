@@ -1,10 +1,11 @@
 // components/screens/SubmitQuoteScreen.tsx
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View, Text, TextInput, TouchableOpacity, StyleSheet,
+  ScrollView, ActivityIndicator, Alert
+} from 'react-native';
 import { useRouter } from 'expo-router';
-// FIX: Import the more powerful SafeAreaView from this library to fix layout issues
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from "../../components/common/Ionicons";
 import { supabase } from '../../supabaseClient';
 import { allCategories } from "../../data/data";
 
@@ -15,6 +16,23 @@ export default function SubmitQuoteScreen() {
   const [selectedCategory, setSelectedCategory] = useState<string>(allCategories[0] || 'Good Vibes');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (mounted) setIsLoggedIn(!!session?.user);
+    })();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+      setIsLoggedIn(!!session?.user);
+    });
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
 
   const handleGoBack = () => {
     if (router.canGoBack()) {
@@ -25,7 +43,10 @@ export default function SubmitQuoteScreen() {
   };
 
   const handleSubmitQuote = async () => {
-    if (!quoteText || !quoteAuthor) {
+    const text = quoteText.trim();
+    const author = quoteAuthor.trim();
+
+    if (!text || !author) {
       setMessage('Please fill in both the quote text and author.');
       return;
     }
@@ -34,37 +55,54 @@ export default function SubmitQuoteScreen() {
     setMessage('Submitting quote...');
 
     try {
-      const currentUser = (await supabase.auth.getSession()).data.session?.user;
-      const submittedByUserId = currentUser?.id || 'anonymous';
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        setIsSubmitting(false);
+        Alert.alert(
+          'Sign in required',
+          'You need an account to submit a quote.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Sign In / Create Account', onPress: () => router.push('/auth') }
+          ]
+        )
+        return;
+      }
 
-      const { error } = await supabase
-        .from('quotes_for_review')
-        .insert([
-          {
-            text: quoteText,
-            author: quoteAuthor,
-            category: selectedCategory,
-            submitted_by_user_id: submittedByUserId,
-            status: 'pending',
-          },
-        ]);
+      const { data, error } = await supabase.functions.invoke('submit-quote', {
+        body: {
+          text: text.slice(0, 500),
+          author: author.slice(0, 120),
+          category: selectedCategory,
+        },
+      });
 
-      if (error) {
-        throw error;
+      if (error || data?.error) {
+        const msg = error?.message || data?.error || 'Failed to submit quote.';
+        if (msg.includes('Too many')) {
+          setMessage('Too many submissions. Please try again in about 10 minutes.');
+        } else {
+          setMessage(`Failed to submit quote: ${msg}`);
+        }
+        return;
       }
 
       setMessage('Quote submitted successfully for review!');
       setQuoteText('');
       setQuoteAuthor('');
-      setTimeout(handleGoBack, 2000);
-
-    } catch (error: any) {
-      console.error("Error submitting quote:", error);
-      setMessage(`Failed to submit quote: ${error.message || error.toString()}`);
+      setTimeout(handleGoBack, 1500);
+    } catch (err: any) {
+      const msg = err?.message || String(err);
+      setMessage(
+        msg.includes('429') || msg.includes('Too many')
+          ? 'Too many submissions. Please try again in about 10 minutes.'
+          : `Failed to submit quote: ${msg}`
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <SafeAreaView style={styles.container}>
@@ -76,6 +114,16 @@ export default function SubmitQuoteScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.formContainer}>
+        {!isLoggedIn && (
+          <Text style={styles.bannerText}>
+            You’re not signed in.{' '}
+            <Text onPress={() => router.push('/auth')} style={styles.bannerLink}>
+              Sign in to submit
+            </Text>
+            .
+          </Text>
+        )}
+
         <Text style={styles.label}>Quote Text:</Text>
         <TextInput
           style={[styles.input, { minHeight: 100 }]} // Taller input for the quote
@@ -146,36 +194,45 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 20, // Reduced padding
-    paddingBottom: 10, // Reduced padding
+    paddingTop: 20, 
+    paddingBottom: 10,
   },
   backButton: {
     marginRight: 16,
   },
   title: {
-    fontSize: 22, // Slightly smaller title
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#FFFFFF',
   },
   formContainer: {
-    paddingHorizontal: 20, // Keep horizontal padding
-    paddingBottom: 20, // Add some bottom padding
+    paddingHorizontal: 20, 
+    paddingBottom: 20,
   },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#E0E0E0',
-    marginBottom: 6, // Reduced margin
-    marginTop: 12, // Reduced margin
+  bannerText: { 
+    color: '#FFD700', 
+    textAlign: 'center', 
+    marginBottom: 10 
+  },
+  bannerLink: { 
+    color: '#8EA0FF', 
+    textDecorationLine: 'underline' 
+  },
+  label: { 
+    fontSize: 16, 
+    fontWeight: '600', 
+    color: '#E0E0E0', 
+    marginBottom: 6, 
+    marginTop: 12 
   },
   input: {
     backgroundColor: '#222034',
     borderRadius: 8,
-    padding: 12, // Reduced padding
+    padding: 12,
     fontSize: 16,
     color: '#FFFFFF',
-    minHeight: 40, // Set a base min height
-    marginBottom: 12, // Reduced margin
+    minHeight: 40,
+    marginBottom: 12,
     borderColor: '#4D637D',
     borderWidth: 1,
   },
@@ -183,13 +240,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'flex-start',
-    marginBottom: 12, // Reduced margin
+    marginBottom: 12,
   },
   categoryButton: {
     backgroundColor: '#4D637D',
-    borderRadius: 8, // Slightly smaller radius
-    paddingVertical: 8, // Reduced padding
-    paddingHorizontal: 12, // Reduced padding
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     marginRight: 8,
     marginBottom: 8,
     borderWidth: 1,
@@ -211,19 +268,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FFD700',
     textAlign: 'center',
-    marginTop: 8, // Reduced margin
-    marginBottom: 8, // Reduced margin
+    marginTop: 8,
+    marginBottom: 8,
   },
   submitButton: {
     backgroundColor: '#6672E7',
-    borderRadius: 10, // Slightly smaller radius
-    padding: 12, // Reduced padding
+    borderRadius: 10, 
+    padding: 12,
     alignItems: 'center',
-    marginTop: 15, // Reduced margin
+    marginTop: 15,
   },
   submitButtonText: {
     color: '#FFFFFF',
-    fontSize: 16, // Slightly smaller text
+    fontSize: 16, 
     fontWeight: 'bold',
   },
 });
