@@ -23,7 +23,6 @@ const frequencyOptions = ["1", "2", "3", "4", "5"];
 const dayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const timeOptions = ["Morning", "Afternoon", "Night"];
 
-// TODO: replace with your live policy URL
 const PRIVACY_POLICY_URL = "https://wearesparklab.com/privacy";
 
 export default function Settings() {

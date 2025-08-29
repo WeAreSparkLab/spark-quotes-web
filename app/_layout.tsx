@@ -178,6 +178,22 @@ export default function RootLayout() {
         <meta property="og:image" content="https://quotes.wearesparklab.com/og.png" />
         <meta property="og:url" content="https://quotes.wearesparklab.com/" />
         <link rel="canonical" href="https://quotes.wearesparklab.com/" />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": "Spark Quotes",
+            "url": "https://quotes.wearesparklab.com/",
+            "potentialAction": {
+              "@type": "SearchAction",
+              "target": "https://quotes.wearesparklab.com/?q={search_term_string}",
+              "query-input": "required name=search_term_string"
+            },
+            "publisher": { "@type": "Organization", "name": "We Are SparkLab" }
+          })
+        }} />
+        <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
+
       </Head>
       <SupabaseContext.Provider
         value={{ supabaseInitialized, session, userId }}
