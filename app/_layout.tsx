@@ -177,6 +177,7 @@ export default function RootLayout() {
         <meta property="og:type" content="website" />
         <meta property="og:image" content="https://quotes.wearesparklab.com/og.png" />
         <meta property="og:url" content="https://quotes.wearesparklab.com/" />
+        <link rel="canonical" href="https://quotes.wearesparklab.com/" />
       </Head>
       <SupabaseContext.Provider
         value={{ supabaseInitialized, session, userId }}
