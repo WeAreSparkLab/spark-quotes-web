@@ -4,6 +4,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { ActivityIndicator, Text, StyleSheet } from "react-native";
 import IndexScreen from "../components/screens/IndexScreen";
 import { useSupabase } from "./_layout";
+import InstallPrompt from "../components/InstallPrompt";
+
 
 export default function App() {
   const { supabaseInitialized } = useSupabase();
@@ -19,7 +21,9 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.appContainer} edges={["top"]}>
+      <InstallPrompt />
       <IndexScreen />
+      
     </SafeAreaView>
   );
 }
