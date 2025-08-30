@@ -112,12 +112,11 @@ export default function RootLayout() {
   const permissionRequestedRef = useRef(false);
 
   useEffect(() => {
-    if (Platform.OS === "web" && "serviceWorker" in navigator) {
-      window.addEventListener("load", () => {
-        navigator.serviceWorker
-          .register("/sw.js")
-          .catch((e) => console.log("SW registration failed", e));
-      });
+    if (Platform.OS === "web" && 'serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js', { scope: '/' })
+        .then(reg => console.log('SW registered:', reg.scope))
+        .catch(err => console.log('SW registration failed:', err));
     }
   }, []);
 
@@ -217,18 +216,12 @@ export default function RootLayout() {
             statusBarTranslucent: false,
             statusBarStyle: 'light',
             contentStyle: { backgroundColor: '#0C0A1A' },
-
             headerTransparent: false,
-            headerStyle: {
-              backgroundColor: '#0C0A1A',
-              borderBottomWidth: StyleSheet.hairlineWidth,
-              borderBottomColor: 'rgba(255,255,255,0.12)',
-              elevation: 0,
-              shadowOpacity: 0,
-            },
+            headerStyle: { backgroundColor: '#0C0A1A' },
+            headerShadowVisible: false,
             headerTintColor: '#FFFFFF',
             headerTitleStyle: { color: '#FFFFFF', fontWeight: '800' },
-            headerShadowVisible: false,
+
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
