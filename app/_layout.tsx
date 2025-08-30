@@ -112,6 +112,16 @@ export default function RootLayout() {
   const permissionRequestedRef = useRef(false);
 
   useEffect(() => {
+    if (Platform.OS === "web" && "serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .catch((e) => console.log("SW registration failed", e));
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     const checkAndRegisterNotifications = async () => {
       try {
         if (permissionRequestedRef.current) return;
@@ -170,7 +180,8 @@ export default function RootLayout() {
     <SafeAreaProvider style={styles.rootContainer}>
       <StatusBar style="light" />
       <Head>
-        <title>Spark Quotes — Your Daily Boost</title>
+        <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#0E0F1D" />
         <meta name="description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
         <meta property="og:title" content="Spark Quotes — Your Daily Boost" />
         <meta property="og:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
@@ -193,7 +204,10 @@ export default function RootLayout() {
           })
         }} />
         <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
-
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </Head>
       <SupabaseContext.Provider
         value={{ supabaseInitialized, session, userId }}
