@@ -18,6 +18,9 @@ import Switch from "../components/common/Switch";
 import { schedulePushNotification } from "../utils/schedulePushNotification";
 import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
+import InstallCTA from '../components/InstallCTA';
+import SupportSection from '../components/SupportSection'
+
 
 const frequencyOptions = ["1", "2", "3", "4", "5"];
 const dayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -285,6 +288,9 @@ export default function Settings() {
         <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
           <Text style={styles.saveButtonText}>Save Changes</Text>
         </TouchableOpacity>
+        <SupportSection />
+        <InstallCTA />
+
       </ScrollView>
     </SafeAreaView>
   );
