@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../supabaseClient';
 import { useRouter } from 'expo-router';
 
+
 export default function AuthScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');

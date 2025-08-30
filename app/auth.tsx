@@ -1,2 +1,7 @@
 // app/auth.tsx
-export { default } from '../components/screens/AuthScreen';
+import React from "react";
+import AuthScreen from "../components/screens/AuthScreen"; 
+
+export default function AuthRoute() {
+  return <AuthScreen />;
+}
