@@ -1,90 +1,81 @@
+// components/InstallPrompt.tsx
 import React, { useEffect, useState } from "react";
-import { Platform, View, Text, TouchableOpacity } from "react-native";
+import { Platform, View, Pressable, Text, StyleSheet } from "react-native";
+
+// we'll stash the event on window so other screens (Settings) can use it
+declare global {
+  interface Window { __deferredPWA?: any }
+}
 
 export default function InstallPrompt() {
-    const [deferred, setDeferred] = useState<any>(null);
-    const [visible, setVisible] = useState(false);
-    const [showIOSTip, setShowIOSTip] = useState(false);
+  const [visible, setVisible] = useState(false);
 
-    localStorage.setItem("sq_hide_install_banner", "1");
+  useEffect(() => {
+    if (Platform.OS !== "web") return;
 
-    const hidden = localStorage.getItem("sq_hide_install_banner") === "1";
-    if (!hidden) setVisible(true);
+    const onBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      window.__deferredPWA = e;
+      setVisible(true);
+    };
 
-    useEffect(() => {
-        if (Platform.OS !== "web") return;
+    window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as any);
+    // show again if we already caught it earlier
+    if (window.__deferredPWA) setVisible(true);
 
-        // Android/Desktop: capture the install event
-        const onBeforeInstallPrompt = (e: any) => {
-            e.preventDefault();
-            setDeferred(e);
-            setVisible(true);
-        };
-        window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt as any);
+    return () =>
+      window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as any);
+  }, []);
 
-        // iOS Safari hint (no event on iOS)
-        const ua = navigator.userAgent.toLowerCase();
-        const isIOS = /iphone|ipad|ipod/.test(ua);
-        const isStandalone = (window.navigator as any).standalone === true;
-        if (isIOS && !isStandalone) {
-            setShowIOSTip(true);
-            setVisible(true);
-        }
+  if (Platform.OS !== "web" || !visible) return null;
 
-        return () => {
-            window.removeEventListener("beforeinstallprompt", onBeforeInstallPrompt as any);
-        };
-    }, []);
+  const handleInstall = async () => {
+    const dp = window.__deferredPWA;
+    if (!dp) return;
+    dp.prompt();
+    await dp.userChoice;
+    window.__deferredPWA = undefined;
+    setVisible(false);
+  };
 
-    if (Platform.OS !== "web" || !visible) return null;
-
-    const box = {
-        padding: 12,
-        margin: 12,
-        borderRadius: 10,
-        backgroundColor: "rgba(255,255,255,0.06)",
-        borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.12)",
-    } as const;
-
-    const btn = {
-        backgroundColor: "#6672E7",
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 8,
-        alignSelf: "flex-start",
-        marginTop: 6,
-    } as const;
-
-    return (
-        <View style={box}>
-            {showIOSTip ? (
-                <>
-                    <Text style={{ color: "#cfd6ff" }}>
-                        Add Spark Quotes to your Home Screen:
-                        {" "}tap <Text style={{ fontWeight: "700" }}>Share</Text> →{" "}
-                        <Text style={{ fontWeight: "700" }}>Add to Home Screen</Text>.
-                    </Text>
-                </>
-            ) : (
-                <>
-                    <Text style={{ color: "#cfd6ff" }}>
-                        Install Spark Quotes for a full-screen experience.
-                    </Text>
-                    <TouchableOpacity
-                        onPress={async () => {
-                            if (!deferred) return;
-                            deferred.prompt();
-                            await deferred.userChoice; // { outcome: 'accepted' | 'dismissed' }
-                            setDeferred(null);
-                            setVisible(false);
-                        }}
-                        style={btn}
-                    >
-                        <Text style={{ color: "#fff", fontWeight: "700" }}>Install app</Text>
-                    </TouchableOpacity>
-                </>
-            )}
-        </View>
-    );
+  return (
+    <View style={styles.bar}>
+      <Text style={styles.msg}>
+        Install <Text style={{ fontWeight: "800" }}>Spark Quotes</Text> for a full-screen experience.
+      </Text>
+      <Pressable onPress={handleInstall} style={styles.btn}>
+        <Text style={styles.btnText}>Install app</Text>
+      </Pressable>
+      <Pressable onPress={() => setVisible(false)} style={styles.close}>
+        <Text style={{ color: "#9aa3ff" }}>✕</Text>
+      </Pressable>
+    </View>
+  );
 }
+
+const styles = StyleSheet.create({
+  bar: {
+    position: "fixed",
+    top: 8,
+    left: 12,
+    right: 12,
+    zIndex: 1000,
+    backgroundColor: "rgba(14,15,29,0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  msg: { color: "#E7E9FF", flex: 1, fontSize: 14 },
+  btn: {
+    backgroundColor: "#7D86FF",
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10
+  },
+  btnText: { color: "white", fontWeight: "700" },
+  close: { paddingHorizontal: 8, paddingVertical: 4 }
+});

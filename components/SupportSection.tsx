@@ -15,7 +15,7 @@ export default function SupportSection({
 
       <Text style={{ color: '#BFC4D6', lineHeight: 20 }}>
         We’re a tiny, family business in the UK. If Spark Quotes brightens your day,
-        you can keep it going with a tip or Spark+ 💛
+        you can keep it going with a tip 💛
       </Text>
 
       <TouchableOpacity
@@ -30,13 +30,6 @@ export default function SupportSection({
         style={{ backgroundColor: '#6672E7', borderRadius: 10, padding: 12, alignItems: 'center' }}
       >
         <Text style={{ color: '#fff', fontWeight: '800' }}>Tip via Stripe</Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity
-        onPress={() => openLink('https://billing.stripe.com/REPLACE_WITH_MONTHLY')}
-        style={{ backgroundColor: '#2ecc71', borderRadius: 10, padding: 12, alignItems: 'center' }}
-      >
-        <Text style={{ color: '#fff', fontWeight: '800' }}>Get Spark+ (Ad-free)</Text>
       </TouchableOpacity>
     </View>
   );

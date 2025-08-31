@@ -241,10 +241,6 @@ export default function IndexScreen() {
             <Ionicons name="settings" color="#FFFFFF" size={24} />
             <Text style={styles.navText}>Settings</Text>
           </TouchableOpacity>
-          <Text style={{ textAlign: 'center', color: '#9AA3B2', marginTop: 12, fontSize: 12 }}>
-  Independent & ad-light. <Text onPress={() => openLink('https://buymeacoffee.com/WEARESPARKLAB')} style={{ textDecorationLine: 'underline', color: '#C9D2FF' }}>Support us</Text>.
-</Text>
-
         </SafeAreaView>
       </View>
     </SafeAreaView>

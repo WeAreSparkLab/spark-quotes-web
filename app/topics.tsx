@@ -13,7 +13,9 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { allCategories } from "../data/data";
 import AppStyles from "../styles/AppStyles";
-import Starfield from '../components/common/Starfield'; 
+import Starfield from '../components/common/Starfield';
+import ResponsivePage from "../components/layout/ResponsivePage";
+
 
 export default function Topics() {
   const router = useRouter();
@@ -46,32 +48,34 @@ export default function Topics() {
   return (
     <View style={styles.topicsContainer}>
       <Starfield speed="slow" starCount={50} />
-
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-        <View style={AppStyles.topicsHeader}>
-          <TouchableOpacity onPress={handleDone} style={AppStyles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-          <Text style={AppStyles.topicsTitle}>Choose Your Topics</Text>
-        </View>
-
-        <ScrollView contentContainerStyle={styles.topicsGrid}>
-          {allCategories.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={styles.topicCardGridItem}
-              onPress={() => toggleTopic(category)}
-            >
-              <Ionicons
-                name={selectedTopics.includes(category) ? "checkbox" : "square-outline"}
-                color={selectedTopics.includes(category) ? "#6672E7" : "#A0A0A0"}
-                size={20}
-              />
-              <Text style={AppStyles.topicText}>{category}</Text>
+        <ResponsivePage maxWidth={1100} padding={20}>
+          <View style={AppStyles.topicsHeader}>
+            <TouchableOpacity onPress={handleDone} style={AppStyles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </TouchableOpacity>
-          ))}
-        </ScrollView>
+            <Text style={AppStyles.topicsTitle}>Choose Your Topics</Text>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.topicsGrid}>
+            {allCategories.map((category) => (
+              <TouchableOpacity
+                key={category}
+                style={styles.topicCardGridItem}
+                onPress={() => toggleTopic(category)}
+              >
+                <Ionicons
+                  name={selectedTopics.includes(category) ? "checkbox" : "square-outline"}
+                  color={selectedTopics.includes(category) ? "#6672E7" : "#A0A0A0"}
+                  size={20}
+                />
+                <Text style={AppStyles.topicText}>{category}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </ResponsivePage>
       </SafeAreaView>
+
     </View>
   );
 }
