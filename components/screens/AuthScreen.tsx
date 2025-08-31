@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { supabase } from '../../supabaseClient';
 import { useRouter } from 'expo-router';
-
+import { ensureProfile } from '../../utils/ensureProfile';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -22,22 +22,26 @@ export default function AuthScreen() {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
         });
         if (error) throw error;
 
+        const userId = data.user?.id;
+        if (userId) await ensureProfile(supabase, userId);
 
         setMessage('Signed in successfully!');
         router.replace('/');
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
         });
         if (error) throw error;
 
+        const userId = data.user?.id;
+        if (userId) await ensureProfile(supabase, userId);
 
         setMessage('Signed up successfully! Please check your email to confirm your account.');
       }
@@ -112,7 +116,7 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0E0F1D', // Dark background
+    backgroundColor: '#0E0F1D', 
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,

@@ -14,7 +14,7 @@ export default function SupportSection({
       )}
 
       <Text style={{ color: '#BFC4D6', lineHeight: 20 }}>
-        We’re a tiny, independent studio in the UK. If Spark Quotes brightens your day,
+        We’re a tiny, family business in the UK. If Spark Quotes brightens your day,
         you can keep it going with a tip or Spark+ 💛
       </Text>
 
