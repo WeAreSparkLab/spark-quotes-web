@@ -14,9 +14,7 @@ import { ensureProfile } from '../utils/ensureProfile';
 import SupportUsBar from "../components/SupportUsBar";
 import { usePathname } from "expo-router";
 
-const pathname = usePathname();
-const showSupport = !pathname?.startsWith("/settings");
-{ showSupport && <SupportUsBar /> }
+
 
 
 const notificationHandler: sNotifications.NotificationHandler = {
@@ -119,6 +117,7 @@ export default function RootLayout() {
 
   const pathname = usePathname();
   const showSupport = !pathname?.startsWith("/settings");
+  { showSupport && <SupportUsBar /> }
 
   useEffect(() => {
     if (Platform.OS === "web" && "serviceWorker" in navigator) {
@@ -130,64 +129,17 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    const checkAndRegisterNotifications = async () => {
-      try {
-        if (permissionRequestedRef.current) return;
-        if (Platform.OS === "web") return;
-
-        const moduleLooksPresent =
-          typeof sNotifications.getPermissionsAsync === "function" &&
-          typeof sNotifications.requestPermissionsAsync === "function" &&
-          typeof sNotifications.setNotificationChannelAsync === "function";
-        if (!moduleLooksPresent) {
-          console.log("Notifications module not available; skipping.");
-          return;
-        }
-
-        const enabledRaw = await AsyncStorage.getItem("notificationsEnabled");
-        const userEnabled = enabledRaw ? JSON.parse(enabledRaw) : false;
-        if (!userEnabled) return;
-
-        await registerForPushNotificationsAsync();
-        permissionRequestedRef.current = true;
-      } catch (e: any) {
-        console.log("Skipping notifications registration:", e?.message ?? e);
-      }
-    };
-    checkAndRegisterNotifications();
-
-    const getInitialSession = async () => {
-      try {
-        const {
-          data: { session: initialSession },
-          error,
-        } = await supabase.auth.getSession();
-        if (error) throw error;
-        setSession(initialSession);
-        setUserId(initialSession?.user?.id || null);
-      } catch (e: any) {
-        console.error("Error getting initial Supabase session:", e.message);
-      } finally {
-        setSupabaseInitialized(true);
-      }
-    };
-    getInitialSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, currentSession) => {
-        setSession(currentSession);
-        const uid = currentSession?.user?.id ?? null;
-        setUserId(uid);
-
-        if (uid) {
-          try {
-            await ensureProfile(supabase, uid);
-          } catch { }
-        }
-      }
-    );
-
-    return () => subscription?.unsubscribe();
+    if (Platform.OS === "web") return;
+    try {
+      sNotifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldShowBanner: true,
+          shouldShowList: true,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+        }),
+      });
+    } catch { }
   }, []);
 
   async function ensureProfile(userId: string) {
@@ -197,37 +149,37 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider style={styles.rootContainer}>
       <StatusBar style="light" />
-      <Head>
-        <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
-        <meta name="theme-color" content="#0E0F1D" />
-        <meta name="description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
-        <meta property="og:title" content="Spark Quotes — Your Daily Boost" />
-        <meta property="og:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
-        <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://quotes.wearesparklab.com/og.png" />
-        <meta property="og:url" content="https://quotes.wearesparklab.com/" />
-        <link rel="canonical" href="https://quotes.wearesparklab.com/" />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            "name": "Spark Quotes",
-            "url": "https://quotes.wearesparklab.com/",
-            "potentialAction": {
-              "@type": "SearchAction",
-              "target": "https://quotes.wearesparklab.com/?q={search_term_string}",
-              "query-input": "required name=search_term_string"
-            },
-            "publisher": { "@type": "Organization", "name": "We Are SparkLab" }
-          })
-        }} />
-        <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-      </Head>
       <SupabaseContext.Provider value={{ supabaseInitialized, session, userId }}>
+        <Head>
+          <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
+          <meta name="theme-color" content="#0E0F1D" />
+          <meta name="description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
+          <meta property="og:title" content="Spark Quotes — Your Daily Boost" />
+          <meta property="og:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
+          <meta property="og:type" content="website" />
+          <meta property="og:image" content="https://quotes.wearesparklab.com/og.png" />
+          <meta property="og:url" content="https://quotes.wearesparklab.com/" />
+          <link rel="canonical" href="https://quotes.wearesparklab.com/" />
+          <script type="application/ld+json" dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Spark Quotes",
+              "url": "https://quotes.wearesparklab.com/",
+              "potentialAction": {
+                "@type": "SearchAction",
+                "target": "https://quotes.wearesparklab.com/?q={search_term_string}",
+                "query-input": "required name=search_term_string"
+              },
+              "publisher": { "@type": "Organization", "name": "We Are SparkLab" }
+            })
+          }} />
+          <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
+          <meta name="apple-mobile-web-app-capable" content="yes" />
+          <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+          <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
+          <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        </Head>
         <Stack
           screenOptions={{
             statusBarTranslucent: false,
@@ -246,7 +198,6 @@ export default function RootLayout() {
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
         </Stack>
-
         {showSupport && <SupportUsBar />}
       </SupabaseContext.Provider>
     </SafeAreaProvider>
