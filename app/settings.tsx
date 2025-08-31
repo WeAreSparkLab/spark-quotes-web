@@ -213,7 +213,7 @@ export default function Settings() {
   // -----------------------------
   // UI helpers
   // -----------------------------
-  
+
   const toggleDay = (day: string) => {
     setSelectedDays((prev) =>
       prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
@@ -454,8 +454,6 @@ export default function Settings() {
           <Text style={styles.saveButtonText}>Save Changes</Text>
         </TouchableOpacity>
 
-        {/* Optional extra sections you already have */}
-        <SupportSection />
         <InstallCTA />
       </ScrollView>
     </SafeAreaView>
