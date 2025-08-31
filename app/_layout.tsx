@@ -10,6 +10,7 @@ import * as sNotifications from "expo-notifications";
 import { Alert, Platform, StyleSheet, View } from "react-native";
 import Head from 'expo-router/head';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ensureProfile } from '../utils/ensureProfile';
 
 
 
@@ -165,9 +166,18 @@ export default function RootLayout() {
     };
     getInitialSession();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+    async function ensureProfile(userId: string) {
+      await supabase.from('profiles').upsert({ id: userId }, { onConflict: 'id' });
+    }
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
       setSession(currentSession);
       setUserId(currentSession?.user?.id || null);
+
+      const uid = currentSession?.user?.id;
+      if (uid) {
+        try { await ensureProfile(supabase, uid); } catch { }
+      }
     });
 
     return () => {
