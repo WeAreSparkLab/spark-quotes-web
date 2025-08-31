@@ -11,7 +11,12 @@ import { Alert, Platform, StyleSheet, View } from "react-native";
 import Head from 'expo-router/head';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ensureProfile } from '../utils/ensureProfile';
+import SupportUsBar from "../components/SupportUsBar";
+import { usePathname } from "expo-router";
 
+const pathname = usePathname();
+const showSupport = !pathname?.startsWith("/settings");
+{ showSupport && <SupportUsBar /> }
 
 
 const notificationHandler: sNotifications.NotificationHandler = {
@@ -112,12 +117,15 @@ export default function RootLayout() {
   const [userId, setUserId] = useState<string | null>(null);
   const permissionRequestedRef = useRef(false);
 
+  const pathname = usePathname();
+  const showSupport = !pathname?.startsWith("/settings");
+
   useEffect(() => {
-    if (Platform.OS === "web" && 'serviceWorker' in navigator) {
+    if (Platform.OS === "web" && "serviceWorker" in navigator) {
       navigator.serviceWorker
-        .register('/sw.js', { scope: '/' })
-        .then(reg => console.log('SW registered:', reg.scope))
-        .catch(err => console.log('SW registration failed:', err));
+        .register("/sw.js", { scope: "/" })
+        .then((reg) => console.log("SW registered:", reg.scope))
+        .catch((err) => console.log("SW registration failed:", err));
     }
   }, []);
 
@@ -125,65 +133,66 @@ export default function RootLayout() {
     const checkAndRegisterNotifications = async () => {
       try {
         if (permissionRequestedRef.current) return;
+        if (Platform.OS === "web") return;
 
-        // 1) Never run on web
-        if (Platform.OS === 'web') return;
-
-        // 2) Skip if the native module isn't present in this build
         const moduleLooksPresent =
-          typeof sNotifications.getPermissionsAsync === 'function' &&
-          typeof sNotifications.requestPermissionsAsync === 'function' &&
-          typeof sNotifications.setNotificationChannelAsync === 'function';
+          typeof sNotifications.getPermissionsAsync === "function" &&
+          typeof sNotifications.requestPermissionsAsync === "function" &&
+          typeof sNotifications.setNotificationChannelAsync === "function";
         if (!moduleLooksPresent) {
-          console.log('Notifications module not available; skipping.');
+          console.log("Notifications module not available; skipping.");
           return;
         }
-        // 3) Only register if the user enabled notifications in Settings
-        const enabledRaw = await AsyncStorage.getItem('notificationsEnabled');
+
+        const enabledRaw = await AsyncStorage.getItem("notificationsEnabled");
         const userEnabled = enabledRaw ? JSON.parse(enabledRaw) : false;
         if (!userEnabled) return;
 
         await registerForPushNotificationsAsync();
         permissionRequestedRef.current = true;
       } catch (e: any) {
-        console.log('Skipping notifications registration:', e?.message ?? e);
+        console.log("Skipping notifications registration:", e?.message ?? e);
       }
     };
     checkAndRegisterNotifications();
 
-    // (your existing session code stays the same)
     const getInitialSession = async () => {
       try {
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        const {
+          data: { session: initialSession },
+          error,
+        } = await supabase.auth.getSession();
         if (error) throw error;
         setSession(initialSession);
         setUserId(initialSession?.user?.id || null);
       } catch (e: any) {
-        console.error('Error getting initial Supabase session:', e.message);
+        console.error("Error getting initial Supabase session:", e.message);
       } finally {
         setSupabaseInitialized(true);
       }
     };
     getInitialSession();
 
-    async function ensureProfile(userId: string) {
-      await supabase.from('profiles').upsert({ id: userId }, { onConflict: 'id' });
-    }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, currentSession) => {
+        setSession(currentSession);
+        const uid = currentSession?.user?.id ?? null;
+        setUserId(uid);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      setSession(currentSession);
-      setUserId(currentSession?.user?.id || null);
-
-      const uid = currentSession?.user?.id;
-      if (uid) {
-        try { await ensureProfile(supabase, uid); } catch { }
+        if (uid) {
+          try {
+            await ensureProfile(supabase, uid);
+          } catch { }
+        }
       }
-    });
+    );
 
-    return () => {
-      subscription?.unsubscribe();
-    };
+    return () => subscription?.unsubscribe();
   }, []);
+
+  async function ensureProfile(userId: string) {
+    await supabase.from('profiles').upsert({ id: userId }, { onConflict: 'id' });
+  }
 
   return (
     <SafeAreaProvider style={styles.rootContainer}>
@@ -218,20 +227,17 @@ export default function RootLayout() {
         <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
         <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
       </Head>
-      <SupabaseContext.Provider
-        value={{ supabaseInitialized, session, userId }}
-      >
+      <SupabaseContext.Provider value={{ supabaseInitialized, session, userId }}>
         <Stack
           screenOptions={{
             statusBarTranslucent: false,
-            statusBarStyle: 'light',
-            contentStyle: { backgroundColor: '#0C0A1A' },
+            statusBarStyle: "light",
+            contentStyle: { backgroundColor: "#0C0A1A" },
             headerTransparent: false,
-            headerStyle: { backgroundColor: '#0C0A1A' },
+            headerStyle: { backgroundColor: "#0C0A1A" },
             headerShadowVisible: false,
-            headerTintColor: '#FFFFFF',
-            headerTitleStyle: { color: '#FFFFFF', fontWeight: '800' },
-
+            headerTintColor: "#FFFFFF",
+            headerTitleStyle: { color: "#FFFFFF", fontWeight: "800" },
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -240,6 +246,8 @@ export default function RootLayout() {
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
         </Stack>
+
+        {showSupport && <SupportUsBar />}
       </SupabaseContext.Provider>
     </SafeAreaProvider>
   );

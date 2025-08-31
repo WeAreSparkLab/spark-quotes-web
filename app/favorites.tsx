@@ -15,6 +15,8 @@ import AppStyles from "../styles/AppStyles";
 import { useSupabase } from "./_layout";
 import { getFavoriteQuoteIds } from "../services/supabaseFavorites";
 import { supabase } from "../supabaseClient";
+import ResponsivePage from "../components/layout/ResponsivePage";
+
 
 // Re-use the Quote interface for consistency
 interface Quote {
@@ -89,35 +91,37 @@ export default function FavoritesScreen() {
 
   return (
     <SafeAreaView style={styles.sceneContainer}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.sceneTitle}>Favorite Quotes</Text>
+      <ResponsivePage maxWidth={1100} padding={20}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.sceneTitle}>Favorite Quotes</Text>
+          </View>
         </View>
-      </View>
 
-      {isLoading ? (
-        <ActivityIndicator size="large" color="#FFFFFF" style={styles.loader} />
-      ) : error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : favoriteQuotes.length === 0 ? (
-        <Text style={styles.emptyText}>
-          No favorite quotes yet! Tap the heart icon on your daily quotes to
-          save them.
-        </Text>
-      ) : (
-        <FlatList
-          data={favoriteQuotes}
-          renderItem={renderQuoteItem}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={styles.flatListContent}
-        />
-      )}
+        {isLoading ? (
+          <ActivityIndicator size="large" color="#FFFFFF" style={styles.loader} />
+        ) : error ? (
+          <Text style={styles.errorText}>{error}</Text>
+        ) : favoriteQuotes.length === 0 ? (
+          <Text style={styles.emptyText}>
+            No favorite quotes yet! Tap the heart icon on your daily quotes to
+            save them.
+          </Text>
+        ) : (
+          <FlatList
+            data={favoriteQuotes}
+            renderItem={renderQuoteItem}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.flatListContent}
+          />
+        )}
+      </ResponsivePage>
     </SafeAreaView>
   );
 }
@@ -136,9 +140,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-start',
   },
   headerTitleContainer: {
-      flex: 1,
-      alignItems: 'center',
-      marginRight: 24,
+    flex: 1,
+    alignItems: 'center',
+    marginRight: 24,
   },
   sceneTitle: {
     ...AppStyles.title,
@@ -146,7 +150,7 @@ const styles = StyleSheet.create({
     textShadowColor: "rgba(96, 116, 245, 0.5)",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
-    marginLeft: 16, 
+    marginLeft: 16,
   },
   backButton: {
     padding: 10,
