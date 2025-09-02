@@ -19,6 +19,7 @@ export default function App() {
       </SafeAreaView>
     );
   }
+console.log('[Index] supabaseInitialized =', supabaseInitialized);
 
   return (
     <SafeAreaView style={styles.appContainer} edges={["top"]}>

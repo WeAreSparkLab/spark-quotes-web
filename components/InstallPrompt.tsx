@@ -1,6 +1,6 @@
 // components/InstallPrompt.tsx
 import React, { useEffect, useState } from "react";
-import { Platform, View, Pressable, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { Platform, View, Text, TouchableOpacity } from "react-native";
 
 // we'll stash the event on window so other screens (Settings) can use it
 declare global {
@@ -13,48 +13,59 @@ export default function InstallPrompt() {
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    const [eventRef, setEventRef] = useState<any>(null);
-    const [visible, setVisible] = useState(false);
-    const [isStandalone, setIsStandalone] = useState(false);
+  if (Platform.OS !== "web") return;
 
-    // detect standalone (iOS + other)
     const standalone =
-      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
-      // @ts-ignore iOS Safari
-      (typeof navigator !== "undefined" && (navigator as any).standalone === true);
-    setIsStandalone(standalone);
+    (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
+    // @ts-ignore iOS Safari
+    ((navigator as any)?.standalone === true);
+  setIsStandalone(standalone);
 
-    const alreadyDismissed = localStorage.getItem("pwa-install-dismissed") === "1";
+
+    const alreadyDismissed =
+      typeof localStorage !== "undefined" &&
+      localStorage.getItem("pwa-install-dismissed") === "1";
 
     const onBeforeInstall = (e: any) => {
-      e.preventDefault();
+      e.preventDefault?.();
       setEventRef(e);
+      (window as any).__deferredPWA = e;
       if (!alreadyDismissed) setVisible(true);
     };
+
     const onInstalled = () => setVisible(false);
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall as any);
-    window.addEventListener("appinstalled", onInstalled);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall as any);
-      window.removeEventListener("appinstalled", onInstalled);
-    };
-  }, []);
+  window.addEventListener("appinstalled", onInstalled);
+
+  return () => {
+    window.removeEventListener("beforeinstallprompt", onBeforeInstall as any);
+    window.removeEventListener("appinstalled", onInstalled);
+  };
+}, []);
 
   if (Platform.OS !== "web" || isStandalone || !visible) return null;
 
   const handleInstall = async () => {
-    if (!eventRef) return;
-    eventRef.prompt();
-    await eventRef.userChoice;
+  if (!eventRef) return;
+  try {
+    eventRef.prompt?.(); 
+    if (eventRef.userChoice) {
+      await eventRef.userChoice;
+    }
+  } catch (e) {
+    console.log('PWA install prompt error', e);
+  } finally {
     setVisible(false);
-    localStorage.setItem("pwa-install-dismissed", "1");
+    try { localStorage.setItem('pwa-install-dismissed', '1'); } catch {}
     setEventRef(null);
-  };
+    (window as any).__deferredPWA = null;
+  }
+};
 
   const handleClose = () => {
     setVisible(false);
-    localStorage.setItem("pwa-install-dismissed", "1");
+    try { localStorage.setItem("pwa-install-dismissed", "1"); } catch {}
   };
 
   return (
