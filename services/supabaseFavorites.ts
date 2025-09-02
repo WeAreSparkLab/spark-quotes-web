@@ -1,5 +1,5 @@
 // services/supabaseFavorites.ts
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient.native';
 import { Session } from '@supabase/supabase-js';
 
 // Define the type for a favorite quote entry in your database

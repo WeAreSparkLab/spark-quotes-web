@@ -18,7 +18,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Switch from "../components/common/Switch";
 import { schedulePushNotification } from "../utils/schedulePushNotification";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../supabaseClient.native";
 import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
 import ResponsivePage from "../components/layout/ResponsivePage";
