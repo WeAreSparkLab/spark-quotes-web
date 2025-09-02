@@ -14,7 +14,7 @@ import { Ionicons } from "../components/common/Ionicons";
 import AppStyles from "../styles/AppStyles";
 import { useSupabase } from "./_layout";
 import { getFavoriteQuoteIds } from "../services/supabaseFavorites";
-import { supabase } from "../supabaseClient";
+import { supabase } from "../supabaseClient.native";
 import ResponsivePage from "../components/layout/ResponsivePage";
 
 

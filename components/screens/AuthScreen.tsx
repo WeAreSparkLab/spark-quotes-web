@@ -4,7 +4,7 @@ import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, SafeAreaView, ActivityIndicator
 } from 'react-native';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../supabaseClient.native';
 import { useRouter } from 'expo-router';
 import { ensureProfile } from '../../utils/ensureProfile';
 

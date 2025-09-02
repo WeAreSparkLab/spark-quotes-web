@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { supabase } from '../../supabaseClient';
+import { supabase } from '../../supabaseClient.native';
 import { allCategories } from "../../data/data";
 
 export default function SubmitQuoteScreen() {
