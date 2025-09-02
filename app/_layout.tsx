@@ -117,7 +117,43 @@ export default function RootLayout() {
 
   const pathname = usePathname();
   const showSupport = !pathname?.startsWith("/settings");
-  { showSupport && <SupportUsBar /> }
+
+useEffect(() => {
+  let mounted = true;
+
+  (async () => {
+    try {
+      // 1) Get current session
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!mounted) return;
+
+      setSession(session ?? null);
+      setUserId(session?.user?.id ?? null);
+
+      // 2) Ensure profile if logged in
+      if (session?.user?.id) {
+        try { await ensureProfile(session.user.id); } catch (e) {
+          console.log('ensureProfile failed:', e);
+        }
+      }
+    } catch (e) {
+      console.log('getSession error:', e);
+    } finally {
+      // 3) IMPORTANT: mark initialized
+      if (mounted) setSupabaseInitialized(true);
+      console.log('[Layout] setSupabaseInitialized(true)');
+    }
+  })();
+
+  // 4) Listen for auth changes
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session ?? null);
+      setUserId(session?.user?.id ?? null);
+      if (session?.user?.id) ensureProfile(session.user.id).catch(() => {});
+  });
+
+  return () => { mounted = false; subscription?.unsubscribe(); };
+}, []);
 
   useEffect(() => {
     if (Platform.OS === "web" && "serviceWorker" in navigator) {

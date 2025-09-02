@@ -1,12 +1,21 @@
 // supabaseClient.ts
+import 'react-native-get-random-values';
+import 'react-native-url-polyfill/auto';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-
-const supabaseUrl = 'https://nmzjdcwjqutqdgqkmesy.supabase.co'; 
+const supabaseUrl = 'https://nmzjdcwjqutqdgqkmesy.supabase.co';
 const supabaseAnonKey = 'REDACTED';
 
-// Create a single Supabase client for convenience
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('[Supabase] Missing EXPO_PUBLIC_SUPABASE_URL or EXPO_PUBLIC_SUPABASE_ANON_KEY');
+}
 
-// You can also export the auth client separately if needed
-export const auth = supabase.auth;
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    storage: AsyncStorage as any,
+    autoRefreshToken: true,
+    detectSessionInUrl: false,
+  },
+});

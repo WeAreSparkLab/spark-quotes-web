@@ -22,6 +22,7 @@ import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
 import ResponsivePage from "../components/layout/ResponsivePage";
+import { shareApp } from "../utils/shareApp";
 
 
 const frequencyOptions = ["1", "2", "3", "4", "5"];
@@ -521,6 +522,7 @@ export default function Settings() {
               </>
             )}
           </View>
+      <Pressable onPress={shareApp}><Text>Share</Text></Pressable>
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
             <Text style={styles.saveButtonText}>Save Changes</Text>
