@@ -9,9 +9,11 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "build:web": "expo export --platform web",
+    "build:web": "npx expo export -p web",
+    "vercel-build": "npx expo export -p web",
     "preview:web": "npx serve dist -p 3000"
   },
+  "engines": { "node": ">=18 <=20" },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "^2.1.2",
