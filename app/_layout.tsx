@@ -234,7 +234,6 @@ useEffect(() => {
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
         </Stack>
-        {showSupport && <SupportUsBar />}
       </SupabaseContext.Provider>
     </SafeAreaProvider>
   );
