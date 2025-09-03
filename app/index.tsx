@@ -24,10 +24,9 @@ console.log('[Index] supabaseInitialized =', supabaseInitialized);
   return (
     <SafeAreaView style={styles.appContainer} edges={["top"]}>
       <ResponsivePage maxWidth={980} padding={20}>
-        <InstallPrompt />
-        <IndexScreen />
-        {Platform.OS === "web" ? <InstallPrompt /> : null}
-      </ResponsivePage>
++        <IndexScreen />
++        {Platform.OS === "web" ? <InstallPrompt /> : null}
++      </ResponsivePage>
     </SafeAreaView >
   );
 }

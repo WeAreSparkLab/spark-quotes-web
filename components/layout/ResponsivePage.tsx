@@ -2,45 +2,21 @@
 import React from "react";
 import { Platform, View, ViewProps } from "react-native";
 
-type Props = ViewProps & {
-  maxWidth?: number;
-  padding?: number;
-};
-
 export default function ResponsivePage({
   children,
-  style,
-  maxWidth = 980,   // tweak to taste: 960 / 1100 / 1280
-  padding = 16,      // horizontal padding
-  ...rest
-}: Props) {
+  maxWidth = 980,
+  padding = 20,
+}: { children: React.ReactNode; maxWidth?: number; padding?: number }) {
   if (Platform.OS !== "web") {
-    // Native: behave like a normal container (no width limit)
-    return (
-      <View style={[{ flex: 1 }, style]} {...rest}>
-        {children}
-      </View>
-    );
+    // Native: full width, just apply padding
+    return <View style={{ flex: 1, padding }}>{children}</View>;
   }
 
   // Web: center and constrain width
+ // Web: centered, constrained width
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
-      <View
-        style={[
-          {
-            width: "80%",
-            maxWidth,
-            paddingHorizontal: padding,
-            flex: 1,
-          },
-          style,
-        ]}
-        {...rest}
-      >
-        {children}
-      </View>
+      <View style={{ width: "100%", maxWidth, padding }}>{children}</View>
     </View>
   );
 }
-

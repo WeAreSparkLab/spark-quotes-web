@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Platform, View, Pressable, Text, StyleSheet, Linking, TouchableOpacity } from "react-native";
 import * as WebBrowser from "expo-web-browser";
+import { usePathname } from "expo-router";
 
 
 const BMC_URL = process.env.EXPO_PUBLIC_BMC_URL!;
@@ -18,8 +19,9 @@ async function openExternal(url: string) {
 
 
 export default function SupportUsBar() {
-const [hide, setHide] = useState(false);
-const onCoffee = useCallback(() => openExternal(BMC_URL), []);
+  const [hide, setHide] = useState(false);
+  const pathname = usePathname();
+  const onCoffee = useCallback(() => openExternal(BMC_URL), []);
   const onTip5 = useCallback(() => openExternal(TIP_5), []);
   const onTip10 = useCallback(() => openExternal(TIP_10), []);
 
@@ -34,15 +36,18 @@ const onCoffee = useCallback(() => openExternal(BMC_URL), []);
   }, []);
 
   if (Platform.OS !== "web" || hide) return null;
+  // Lift the bar above the bottom nav on the home route
+  const bottomOffset = pathname === "/" ? 76 : 12;
 
-return (
+
+  return (
     <View style={styles.wrap}>
-      <View style={styles.bar}>
+      <View style={[styles.wrap, { bottom: bottomOffset }]}>
         <Text style={styles.text}>Enjoying Spark Quotes?</Text>
         <View style={{ flex: 1 }} />
         <TouchableOpacity onPress={onCoffee} style={styles.ctaPrimary}><Text style={styles.ctaPrimaryText}>Buy me a coffee</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onTip5}   style={styles.ctaSecondary}><Text style={styles.ctaSecondaryText}>Tip £5</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onTip10}  style={styles.ctaSecondary}><Text style={styles.ctaSecondaryText}>Tip £10</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onTip5} style={styles.ctaSecondary}><Text style={styles.ctaSecondaryText}>Tip £5</Text></TouchableOpacity>
+        <TouchableOpacity onPress={onTip10} style={styles.ctaSecondary}><Text style={styles.ctaSecondaryText}>Tip £10</Text></TouchableOpacity>
       </View>
     </View>
   );
@@ -50,9 +55,9 @@ return (
 
 const styles = StyleSheet.create({
   wrap: { position: "absolute", left: 12, right: 12, bottom: 12, alignItems: "center" },
-  bar:  { width: "100%", maxWidth: 980, backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 8 },
+  bar: { width: "100%", maxWidth: 980, backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 8 },
   text: { color: "#C9CCE3" },
-  ctaPrimary:   { backgroundColor: "#FFDD00", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
+  ctaPrimary: { backgroundColor: "#FFDD00", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
   ctaPrimaryText: { color: "#222", fontWeight: "700" },
   ctaSecondary: { backgroundColor: "#6672E7", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, marginLeft: 6 },
   ctaSecondaryText: { color: "#fff", fontWeight: "700" },

@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StyleSheet,
+  Pressable,
   Linking,
   Alert,
   ActivityIndicator,
