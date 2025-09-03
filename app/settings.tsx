@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
   TextInput,
   Platform,
+   DevSettings
 } from "react-native";
 import * as Updates from "expo-updates";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -125,18 +126,31 @@ export default function Settings() {
   async function refreshApp() {
     try {
       setRefreshing(true);
+
       if (Platform.OS === "web") {
         await forceUpdate(); // uses your SW helper above, then reloads
         return;
       }
-      const update = await Updates.checkForUpdateAsync();
-      if (update.isAvailable) await Updates.fetchUpdateAsync();
-      await Updates.reloadAsync();
-    } catch (e) {
-      console.log("Refresh failed", e);
-      setRefreshing(false); // let the user try again
+      // Try to lazy-load expo-updates; if not installed in dev build, just reload JS
+    let Updates: any;
+    try {
+      Updates = await import("expo-updates");
+    } catch {
+      Updates = null;
     }
+      if (!Updates?.checkForUpdateAsync) {
+      DevSettings.reload(); // dev client fallback
+      return;
+    }
+
+    const res = await Updates.checkForUpdateAsync();
+    if (res.isAvailable) await Updates.fetchUpdateAsync();
+    await Updates.reloadAsync();
+  } catch (e) {
+    console.log("Refresh failed", e);
+    setRefreshing(false);
   }
+}
 
   // -----------------------------
   // Fetch profile.is_supporter
