@@ -50,7 +50,8 @@
     "react-native-webview": "13.13.5",
     "react-native-get-random-values": "~1.11.0",
     "@stripe/stripe-react-native": "0.45.0",
-    "expo-clipboard": "~7.1.5"
+    "expo-clipboard": "~7.1.5",
+    "expo-updates": "~0.28.17"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

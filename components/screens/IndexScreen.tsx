@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
+  Platform  
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../supabaseClient";
@@ -254,7 +255,7 @@ const styles = StyleSheet.create({
   },
   scrollContentContainer: {
     flexGrow: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: Platform.OS === "web" ? 16 : 0,
     paddingTop: 6,
     paddingBottom: 10,
   },
@@ -297,7 +298,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
-    marginHorizontal: 15,
+    marginHorizontal: Platform.OS === "web" ? 15 : 0,
     marginTop: 12,
     alignItems: "center",
     alignSelf: "stretch",
