@@ -182,7 +182,6 @@ export default function IndexScreen() {
             AppStyles.header,
             {
               backgroundColor: "#0C0A1A",
-              // full-bleed on native, keep gutters on web
               paddingHorizontal: Platform.OS === "web" ? 16 : 0,
               marginHorizontal: 0,
               alignSelf: "stretch",

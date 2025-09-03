@@ -1,6 +1,6 @@
 // components/layout/ResponsivePage.tsx
 import React from "react";
-import { Platform, View, ViewProps } from "react-native";
+import { Platform, View } from "react-native";
 
 export default function ResponsivePage({
   children,
@@ -8,15 +8,14 @@ export default function ResponsivePage({
   padding = 20,
 }: { children: React.ReactNode; maxWidth?: number; padding?: number }) {
   if (Platform.OS !== "web") {
-    // Native: full width, just apply padding
-    return <View style={{ flex: 1, padding }}>{children}</View>;
+    // Native: full-bleed, no gutters
+    return <View style={{ flex: 1, paddingHorizontal: 0, paddingVertical: 0 }}>{children}</View>;
   }
-
-  // Web: center and constrain width
- // Web: centered, constrained width
+  // Web: centered, constrained width
   return (
     <View style={{ flex: 1, alignItems: "center" }}>
       <View style={{ width: "100%", maxWidth, padding }}>{children}</View>
     </View>
   );
 }
+
