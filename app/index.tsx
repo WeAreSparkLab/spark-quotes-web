@@ -23,10 +23,9 @@ console.log('[Index] supabaseInitialized =', supabaseInitialized);
 
   return (
     <SafeAreaView style={styles.appContainer} edges={["top"]}>
-      <ResponsivePage maxWidth={980} padding={20}>
-+        <IndexScreen />
-+        {Platform.OS === "web" ? <InstallPrompt /> : null}
-+      </ResponsivePage>
+      <ResponsivePage maxWidth={980} padding={20}>        <IndexScreen />
+       {Platform.OS === "web" ? <InstallPrompt /> : null}
+      </ResponsivePage>
     </SafeAreaView >
   );
 }
@@ -36,5 +35,4 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0E0F1D" },
   loadingText: { color: "#E0E0E0", marginTop: 10 },
 });
-// bump 
-// bump 
+
