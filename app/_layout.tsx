@@ -3,7 +3,7 @@
 import React, { createContext, useEffect, useState, useContext, useRef } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { supabase } from "../supabaseClient.native";
+import { supabase } from "../supabaseClient";
 import { Session } from "@supabase/supabase-js";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as sNotifications from "expo-notifications";
