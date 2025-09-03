@@ -13,6 +13,7 @@ import {
   TextInput,
   Platform,
 } from "react-native";
+import * as Updates from "expo-updates";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +25,6 @@ import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
 import ResponsivePage from "../components/layout/ResponsivePage";
 import { shareApp } from "../utils/shareApp";
-
 
 const frequencyOptions = ["1", "2", "3", "4", "5"];
 const dayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -43,6 +43,7 @@ export async function forceUpdate() {
   // Small delay to let new SW activate
   setTimeout(() => window.location.reload(), 400);
 }
+
 
 const isWebWithSW =
   typeof window !== 'undefined' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator;
@@ -110,6 +111,7 @@ export default function Settings() {
   const [dailyFrequency, setDailyFrequency] = useState("1");
   const [selectedDays, setSelectedDays] = useState<string[]>(dayOptions);
   const [selectedTimes, setSelectedTimes] = useState<string[]>(["Morning"]);
+  const [refreshing, setRefreshing] = useState(false);
 
   // account / supporter
   const [deleting, setDeleting] = useState(false);
@@ -119,6 +121,22 @@ export default function Settings() {
 
   const [redeemMsg, setRedeemMsg] = useState('');
   const [upgrading, setUpgrading] = useState(false);
+
+  async function refreshApp() {
+    try {
+      setRefreshing(true);
+      if (Platform.OS === "web") {
+        await forceUpdate(); // uses your SW helper above, then reloads
+        return;
+      }
+      const update = await Updates.checkForUpdateAsync();
+      if (update.isAvailable) await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch (e) {
+      console.log("Refresh failed", e);
+      setRefreshing(false); // let the user try again
+    }
+  }
 
   // -----------------------------
   // Fetch profile.is_supporter
@@ -523,24 +541,34 @@ export default function Settings() {
               </>
             )}
           </View>
-      <Pressable onPress={shareApp}><Text>Share</Text></Pressable>
+          <Pressable onPress={shareApp}><Text>Share</Text></Pressable>
 
           <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
             <Text style={styles.saveButtonText}>Save Changes</Text>
           </TouchableOpacity>
           <InstallAppRow />
+          {/* App updates */}
+          <View style={styles.settingCard}>
+            <Text style={styles.sectionTitle}>App updates</Text>
+
+            <TouchableOpacity
+              style={[styles.logoutButton, refreshing && { opacity: 0.7 }]}
+              onPress={refreshApp}
+              disabled={refreshing}
+            >
+              {refreshing ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.logoutButtonText}>Refresh app</Text>
+              )}
+            </TouchableOpacity>
+
+            <Text style={{ color: "#BFC4D6", marginTop: 8 }}>
+              Checks for an update and reloads the app.
+            </Text>
+          </View>
         </ScrollView>
       </ResponsivePage>
-      {isWebWithSW && (
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>App updates</Text>
-          <TouchableOpacity style={styles.actionButton} onPress={forceUpdate}>
-            <Ionicons name="refresh" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
-            <Text style={styles.actionButtonText}>Refresh app</Text>
-          </TouchableOpacity>
-          <Text style={styles.helpText}>Checks for an update and reloads the app.</Text>
-        </View>
-      )}
     </SafeAreaView>
   );
 }
@@ -657,39 +685,5 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     borderColor: "#4D637D",
     borderWidth: 1,
-  },
-  card: {
-    backgroundColor: '#1A1830',
-    borderColor: '#2C2A45',
-    borderWidth: 1,
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  cardTitle: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 10,
-  },
-
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    backgroundColor: '#6672E7',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  helpText: {
-    color: '#B9BBD1',
-    fontSize: 12,
-    marginTop: 8,
   },
 });
