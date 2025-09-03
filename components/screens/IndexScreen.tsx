@@ -8,7 +8,7 @@ import {
   StyleSheet,
   Image,
   ScrollView,
-  Platform  
+  Platform
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../supabaseClient";
@@ -177,8 +177,18 @@ export default function IndexScreen() {
       <Starfield speed="fast" starCount={100} />
 
       <View style={{ flex: 1, zIndex: 1 }}>
-        <View style={[AppStyles.header, { backgroundColor: "#0C0A1A" }]}>
-          <Text style={styles.sceneTitle}>Spark Quotes</Text>
+        <View
+          style={[
+            AppStyles.header,
+            {
+              backgroundColor: "#0C0A1A",
+              // full-bleed on native, keep gutters on web
+              paddingHorizontal: Platform.OS === "web" ? 16 : 0,
+              marginHorizontal: 0,
+              alignSelf: "stretch",
+            },
+          ]}
+        >          <Text style={styles.sceneTitle}>Spark Quotes</Text>
           <Text style={styles.sceneSubtitle}>Your Quote of the Day</Text>
         </View>
 

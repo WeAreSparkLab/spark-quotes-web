@@ -332,7 +332,11 @@ export default function Settings() {
           <Text style={styles.title}>Settings</Text>
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollView}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={[styles.scrollView, { paddingBottom: 40 }]}
+          keyboardShouldPersistTaps="handled"
+        >
           {/* Notifications */}
           <View style={styles.settingCard}>
             <View style={styles.rowBetween}>
