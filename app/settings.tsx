@@ -324,7 +324,7 @@ export default function Settings() {
 
   return (
     <SafeAreaView style={styles.settingsContainer}>
-      <ResponsivePage maxWidth={1100} padding={20}>
+      <ResponsivePage maxWidth={1100} padding={Platform.OS === "web" ? 20 : 0}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
