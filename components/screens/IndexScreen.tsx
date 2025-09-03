@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { supabase } from "../../supabaseClient.native";
+import { supabase } from "../../supabaseClient";
 import { allCategories } from "../../data/data";
 import { Ionicons } from "../common/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
