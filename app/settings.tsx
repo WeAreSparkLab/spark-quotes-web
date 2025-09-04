@@ -14,7 +14,6 @@ import {
   Platform,
    DevSettings
 } from "react-native";
-import * as Updates from "expo-updates";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -24,7 +23,6 @@ import { schedulePushNotification } from "../utils/schedulePushNotification";
 import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
-import ResponsivePage from "../components/layout/ResponsivePage";
 import { shareApp } from "../utils/shareApp";
 
 const frequencyOptions = ["1", "2", "3", "4", "5"];
@@ -131,7 +129,6 @@ export default function Settings() {
         await forceUpdate(); // uses your SW helper above, then reloads
         return;
       }
-      // Try to lazy-load expo-updates; if not installed in dev build, just reload JS
     let Updates: any;
     try {
       Updates = await import("expo-updates");
@@ -139,7 +136,7 @@ export default function Settings() {
       Updates = null;
     }
       if (!Updates?.checkForUpdateAsync) {
-      DevSettings.reload(); // dev client fallback
+      DevSettings.reload(); 
       return;
     }
 
@@ -338,7 +335,6 @@ export default function Settings() {
 
   return (
     <SafeAreaView style={styles.settingsContainer}>
-      <ResponsivePage maxWidth={1100} padding={Platform.OS === "web" ? 20 : 0}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
@@ -586,7 +582,6 @@ export default function Settings() {
             </Text>
           </View>
         </ScrollView>
-      </ResponsivePage>
     </SafeAreaView>
   );
 }
