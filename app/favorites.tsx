@@ -15,7 +15,6 @@ import AppStyles from "../styles/AppStyles";
 import { useSupabase } from "./_layout";
 import { getFavoriteQuoteIds } from "../services/supabaseFavorites";
 import { supabase } from "../supabaseClient";
-import ResponsivePage from "../components/layout/ResponsivePage";
 
 
 // Re-use the Quote interface for consistency
@@ -91,7 +90,6 @@ export default function FavoritesScreen() {
 
   return (
     <SafeAreaView style={styles.sceneContainer}>
-      <ResponsivePage maxWidth={1100} padding={20}>
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => router.back()}
@@ -121,7 +119,6 @@ export default function FavoritesScreen() {
             contentContainerStyle={styles.flatListContent}
           />
         )}
-      </ResponsivePage>
     </SafeAreaView>
   );
 }

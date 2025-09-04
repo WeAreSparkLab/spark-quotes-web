@@ -14,7 +14,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { allCategories } from "../data/data";
 import AppStyles from "../styles/AppStyles";
 import Starfield from '../components/common/Starfield';
-import ResponsivePage from "../components/layout/ResponsivePage";
 
 
 export default function Topics() {
@@ -49,7 +48,6 @@ export default function Topics() {
     <View style={styles.topicsContainer}>
       <Starfield speed="slow" starCount={50} />
       <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-        <ResponsivePage maxWidth={1100} padding={20}>
           <View style={AppStyles.topicsHeader}>
             <TouchableOpacity onPress={handleDone} style={AppStyles.backButton}>
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
@@ -73,7 +71,6 @@ export default function Topics() {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </ResponsivePage>
       </SafeAreaView>
 
     </View>

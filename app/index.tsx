@@ -5,7 +5,6 @@ import { ActivityIndicator, Text, StyleSheet, Platform } from "react-native";
 import IndexScreen from "../components/screens/IndexScreen";
 import { useSupabase } from "./_layout";
 import InstallPrompt from "../components/InstallPrompt";
-import ResponsivePage from "../components/layout/ResponsivePage";
 
 
 export default function App() {
@@ -23,10 +22,8 @@ console.log('[Index] supabaseInitialized =', supabaseInitialized);
 
   return (
     <SafeAreaView style={styles.appContainer} edges={["top"]}>
-      <ResponsivePage maxWidth={1100} padding={Platform.OS === "web" ? 20 : 0}>       
         <IndexScreen />
        {Platform.OS === "web" ? <InstallPrompt /> : null}
-      </ResponsivePage>
     </SafeAreaView >
   );
 }
