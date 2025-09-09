@@ -12,7 +12,8 @@ import {
   ActivityIndicator,
   TextInput,
   Platform,
-   DevSettings
+  DevSettings,
+  ActionSheetIOS,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -24,6 +25,8 @@ import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
 import { shareApp } from "../utils/shareApp";
+import { openCoffee, openTipChooser, getStripeCTA } from "../utils/support";
+import { LINKS } from "../utils/support";
 
 const frequencyOptions = ["1", "2", "3", "4", "5"];
 const dayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -120,6 +123,12 @@ export default function Settings() {
 
   const [redeemMsg, setRedeemMsg] = useState('');
   const [upgrading, setUpgrading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+
+
+  const SUPPORTER_KEYS_ENABLED =
+    (process.env.EXPO_PUBLIC_SUPPORTER_KEYS ?? '').toLowerCase() === 'true';
 
   async function refreshApp() {
     try {
@@ -129,25 +138,25 @@ export default function Settings() {
         await forceUpdate(); // uses your SW helper above, then reloads
         return;
       }
-    let Updates: any;
-    try {
-      Updates = await import("expo-updates");
-    } catch {
-      Updates = null;
-    }
+      let Updates: any;
+      try {
+        Updates = await import("expo-updates");
+      } catch {
+        Updates = null;
+      }
       if (!Updates?.checkForUpdateAsync) {
-      DevSettings.reload(); 
-      return;
-    }
+        DevSettings.reload();
+        return;
+      }
 
-    const res = await Updates.checkForUpdateAsync();
-    if (res.isAvailable) await Updates.fetchUpdateAsync();
-    await Updates.reloadAsync();
-  } catch (e) {
-    console.log("Refresh failed", e);
-    setRefreshing(false);
+      const res = await Updates.checkForUpdateAsync();
+      if (res.isAvailable) await Updates.fetchUpdateAsync();
+      await Updates.reloadAsync();
+    } catch (e) {
+      console.log("Refresh failed", e);
+      setRefreshing(false);
+    }
   }
-}
 
   // -----------------------------
   // Fetch profile.is_supporter
@@ -176,7 +185,9 @@ export default function Settings() {
 
   // Run once on mount and whenever auth user changes
   useEffect(() => {
-    refreshSupporter();
+    if (SUPPORTER_KEYS_ENABLED) {
+      refreshSupporter();
+    }
   }, [refreshSupporter, session?.user?.id]);
 
   // -----------------------------
@@ -191,24 +202,24 @@ export default function Settings() {
 
     setRedeeming(true);
     try {
-      const { data, error } = await supabase.functions.invoke(
-        "redeem-support-key",
-        { body: { code: trimmed } }
-      );
+      const { data, error } = await supabase.functions.invoke("redeem-support-key", {
+        body: { code: trimmed },
+      });
 
       if (error || data?.error) {
         throw new Error(data?.error || error?.message || "Could not redeem.");
       }
 
       Alert.alert("Thank you!", "Supporter unlocked 🎉");
-      setCode("");
-      await refreshSupporter();
+      setCode("");                 // clear the input on success
+      await refreshSupporter();    // fetch profile.is_supporter again
     } catch (e: any) {
-      Alert.alert("Could not redeem", e?.message ?? "Try again.");
+      Alert.alert("Could not redeem", String(e?.message ?? e));
     } finally {
       setRedeeming(false);
     }
   };
+
 
   // -----------------------------
   // Load & Save local settings
@@ -235,6 +246,8 @@ export default function Settings() {
   }, []);
 
   const handleSaveChanges = async () => {
+    if (saving) return;
+    setSaving(true);
     try {
       await AsyncStorage.setItem(
         "notificationsEnabled",
@@ -245,15 +258,22 @@ export default function Settings() {
       await AsyncStorage.setItem("selectedTimes", JSON.stringify(selectedTimes));
 
       if (notificationsEnabled) {
-        await schedulePushNotification(
-          dailyFrequency,
-          selectedDays,
-          selectedTimes
-        );
+        try {
+          await schedulePushNotification(dailyFrequency, selectedDays, selectedTimes);
+        } catch (e) {
+          console.log("schedulePushNotification failed", e);
+        }
       }
-      router.back();
+
+      // Optional: quick feedback
+      // Alert.alert("Saved", "Your preferences have been updated.");
+
+      goBackOrHome();
     } catch (e) {
       console.error("Failed to save settings.", e);
+      Alert.alert("Couldn't save", "Please try again.");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -328,6 +348,13 @@ export default function Settings() {
     );
   };
 
+  const goBackOrHome = () => {
+    // If there's a history entry, go back. Otherwise jump to home.
+    if (router.canGoBack()) router.back();
+    else router.replace("/"); // or router.replace("/index")
+  };
+
+
 
   // -----------------------------
   // Render
@@ -335,180 +362,208 @@ export default function Settings() {
 
   return (
     <SafeAreaView style={styles.settingsContainer}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
-          </TouchableOpacity>
-          <Text style={styles.title}>Settings</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={goBackOrHome} style={styles.backButton} hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}>
+          <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
+        </TouchableOpacity>
+        <Text style={styles.title}>Settings</Text>
+      </View>
+
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.scrollView, { paddingBottom: 40 }]}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Notifications */}
+        <View style={styles.settingCard}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.settingLabel}>Enable Notifications</Text>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={setNotificationsEnabled}
+              trackColor={{ false: "#D1D5DB", true: "#6672E7" }}
+              thumbColor={"#FFFFFF"}
+            />
+          </View>
         </View>
 
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={[styles.scrollView, { paddingBottom: 40 }]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* Notifications */}
-          <View style={styles.settingCard}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.settingLabel}>Enable Notifications</Text>
-              <Switch
-                value={notificationsEnabled}
-                onValueChange={setNotificationsEnabled}
-                trackColor={{ false: "#D1D5DB", true: "#6672E7" }}
-                thumbColor={"#FFFFFF"}
-              />
-            </View>
-          </View>
-
-          {/* Daily Frequency */}
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>Daily Frequency</Text>
-            <View style={styles.optionsRow}>
-              {frequencyOptions.map((option) => (
-                <TouchableOpacity
-                  key={option}
+        {/* Daily Frequency */}
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>Daily Frequency</Text>
+          <View style={styles.optionsRow}>
+            {frequencyOptions.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.optionButton,
+                  dailyFrequency === option && styles.selectedOption,
+                ]}
+                onPress={() => setDailyFrequency(option)}
+              >
+                <Text
                   style={[
-                    styles.optionButton,
-                    dailyFrequency === option && styles.selectedOption,
+                    styles.optionText,
+                    dailyFrequency === option && styles.selectedOptionText,
                   ]}
-                  onPress={() => setDailyFrequency(option)}
                 >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      dailyFrequency === option && styles.selectedOptionText,
-                    ]}
-                  >
-                    {option}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Time of Day */}
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>Time of Day</Text>
-            <View style={styles.optionsRow}>
-              {timeOptions.map((option) => (
-                <TouchableOpacity
-                  key={option}
-                  style={[
-                    styles.optionButton,
-                    selectedTimes.includes(option) && styles.selectedOption,
-                  ]}
-                  onPress={() => toggleTime(option)}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      selectedTimes.includes(option) && styles.selectedOptionText,
-                    ]}
-                  >
-                    {option}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Active Days */}
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>Active Days</Text>
-            <View className="days" style={styles.daysContainer}>
-              {dayOptions.map((day) => (
-                <TouchableOpacity
-                  key={day}
-                  style={[
-                    styles.dayButton,
-                    selectedDays.includes(day) && styles.selectedDay,
-                  ]}
-                  onPress={() => toggleDay(day)}
-                >
-                  <Text
-                    style={[
-                      styles.dayText,
-                      selectedDays.includes(day) && styles.selectedDayText,
-                    ]}
-                  >
-                    {day}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* Legal */}
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>Legal</Text>
-            <TouchableOpacity style={styles.linkButton} onPress={openPrivacy}>
-              <Text style={styles.linkButtonText}>Privacy Policy</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Account */}
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>Account</Text>
-
-            {session ? (
-              <>
-                <TouchableOpacity
-                  style={styles.logoutButton}
-                  onPress={handleLogout}
-                  disabled={deleting}
-                >
-                  <Text style={styles.logoutButtonText}>Logout</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={confirmDelete}
-                  disabled={deleting}
-                >
-                  {deleting ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={styles.deleteButtonText}>Delete Account</Text>
-                  )}
-                </TouchableOpacity>
-              </>
-            ) : (
-              <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
-                <Text style={styles.loginButtonText}>Sign In / Create Account</Text>
+                  {option}
+                </Text>
               </TouchableOpacity>
-            )}
+            ))}
           </View>
+        </View>
 
-          {/* Support call-to-actions */}
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>Support Spark</Text>
-            <Text style={{ color: "#BFC4D6", marginBottom: 10 }}>
-              We’re a tiny, independent studio in the UK. If Spark Quotes brightens your day,
-              you can keep it going with a tip 💛
+        {/* Time of Day */}
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>Time of Day</Text>
+          <View style={styles.optionsRow}>
+            {timeOptions.map((option) => (
+              <TouchableOpacity
+                key={option}
+                style={[
+                  styles.optionButton,
+                  selectedTimes.includes(option) && styles.selectedOption,
+                ]}
+                onPress={() => toggleTime(option)}
+              >
+                <Text
+                  style={[
+                    styles.optionText,
+                    selectedTimes.includes(option) && styles.selectedOptionText,
+                  ]}
+                >
+                  {option}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Active Days */}
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>Active Days</Text>
+          <View className="days" style={styles.daysContainer}>
+            {dayOptions.map((day) => (
+              <TouchableOpacity
+                key={day}
+                style={[
+                  styles.dayButton,
+                  selectedDays.includes(day) && styles.selectedDay,
+                ]}
+                onPress={() => toggleDay(day)}
+              >
+                <Text
+                  style={[
+                    styles.dayText,
+                    selectedDays.includes(day) && styles.selectedDayText,
+                  ]}
+                >
+                  {day}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Legal */}
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>Legal</Text>
+          <TouchableOpacity style={styles.linkButton} onPress={openPrivacy}>
+            <Text style={styles.linkButtonText}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Account */}
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>Account</Text>
+
+          {session ? (
+            <>
+              <TouchableOpacity
+                style={styles.logoutButton}
+                onPress={handleLogout}
+                disabled={deleting}
+              >
+                <Text style={styles.logoutButtonText}>Logout</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={confirmDelete}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.deleteButtonText}>Delete Account</Text>
+                )}
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
+              <Text style={styles.loginButtonText}>Sign In / Create Account</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Support call-to-actions */}
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>Support Spark</Text>
+          <Text style={{ color: "#BFC4D6", marginBottom: 10 }}>
+            We’re a tiny family business in the UK. If Spark Quotes brightens your day,
+            you can keep it going with a tip 💛
+          </Text>
+
+          <TouchableOpacity
+            style={[styles.linkButton, { backgroundColor: "#F7BE38", marginBottom: 8 }]}
+            onPress={openCoffee}
+          >
+            <Text style={{ color: "#1a1a1a", fontWeight: "800" }}>
+              Buy us a coffee ☕
             </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.linkButton, { backgroundColor: "#F7BE38", marginBottom: 8 }]}
-              onPress={() =>
-                Linking.openURL("https://buymeacoffee.com/WEARESPARKLAB")
-              }
-            >
-              <Text style={{ color: "#1a1a1a", fontWeight: "800" }}>
-                Buy us a coffee ☕
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.linkButton, { backgroundColor: "#6672E7" }]}
+            onPress={openTipChooser}
+          >
+            <Text style={{ color: "#fff", fontWeight: "800" }}>
+              {getStripeCTA()}
+            </Text>
+          </TouchableOpacity>
+          {/* --- Web-only quick amounts --- */}
+          {Platform.OS === "web" && (LINKS.TIP_5 || LINKS.TIP_10 || LINKS.TIP_ANY) ? (
+            <View style={styles.quickRow}>
+              {LINKS.TIP_5 ? (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(LINKS.TIP_5)}
+                  style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.08)" }]}
+                >
+                  <Text style={styles.quickText}>Tip £5</Text>
+                </TouchableOpacity>
+              ) : null}
+              {LINKS.TIP_10 ? (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(LINKS.TIP_10)}
+                  style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.08)" }]}
+                >
+                  <Text style={styles.quickText}>Tip £10</Text>
+                </TouchableOpacity>
+              ) : null}
+              {LINKS.TIP_ANY ? (
+                <TouchableOpacity
+                  onPress={() => Linking.openURL(LINKS.TIP_ANY)}
+                  style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.08)" }]}
+                >
+                  <Text style={styles.quickText}>Custom</Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
 
-            <TouchableOpacity
-              style={[styles.linkButton, { backgroundColor: "#6672E7" }]}
-              onPress={() =>
-                Linking.openURL("https://donate.stripe.com/REPLACE_WITH_ONE_TIME")
-              }
-            >
-              <Text style={{ color: "#fff", fontWeight: "800" }}>Tip via Stripe</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Supporter status / Redeem */}
+        {/* Supporter status / Redeem */}
+        {SUPPORTER_KEYS_ENABLED && (
           <View style={styles.settingCard}>
             <Text style={styles.sectionTitle}>Supporter Status</Text>
             {isSupporter ? (
@@ -555,33 +610,38 @@ export default function Settings() {
               </>
             )}
           </View>
-          <Pressable onPress={shareApp}><Text>Share</Text></Pressable>
+        )}
+        <Pressable onPress={shareApp}><Text>Share</Text></Pressable>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveChanges}>
-            <Text style={styles.saveButtonText}>Save Changes</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, saving && { opacity: 0.7 }]}
+          onPress={handleSaveChanges}
+          disabled={saving}
+        >
+          <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
+        </TouchableOpacity>
+        <InstallAppRow />
+        {/* App updates */}
+        <View style={styles.settingCard}>
+          <Text style={styles.sectionTitle}>App updates</Text>
+
+          <TouchableOpacity
+            style={[styles.logoutButton, refreshing && { opacity: 0.7 }]}
+            onPress={refreshApp}
+            disabled={refreshing}
+          >
+            {refreshing ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.logoutButtonText}>Refresh app</Text>
+            )}
           </TouchableOpacity>
-          <InstallAppRow />
-          {/* App updates */}
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>App updates</Text>
 
-            <TouchableOpacity
-              style={[styles.logoutButton, refreshing && { opacity: 0.7 }]}
-              onPress={refreshApp}
-              disabled={refreshing}
-            >
-              {refreshing ? (
-                <ActivityIndicator color="#fff" />
-              ) : (
-                <Text style={styles.logoutButtonText}>Refresh app</Text>
-              )}
-            </TouchableOpacity>
-
-            <Text style={{ color: "#BFC4D6", marginTop: 8 }}>
-              Checks for an update and reloads the app.
-            </Text>
-          </View>
-        </ScrollView>
+          <Text style={{ color: "#BFC4D6", marginTop: 8 }}>
+            Checks for an update and reloads the app.
+          </Text>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -698,5 +758,25 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     borderColor: "#4D637D",
     borderWidth: 1,
+  },
+  quickRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,          // RN Web supports gap; if you prefer, remove and use margins below
+    marginTop: 10,
+    alignItems: "center",
+
+  },
+  quickBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    marginRight: 8,  // keep spacing even if gap unsupported
+    marginBottom: 8,
+  },
+  quickText: {
+    color: "#E6E7F2",
+    fontWeight: "700",
+    fontSize: 14,
   },
 });
