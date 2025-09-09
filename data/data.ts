@@ -5,9 +5,9 @@ export interface Quote {
     text: string;
     author: string;
     category: string;
-  }
+}
 
-  export const quotes: Quote[] = [
+export const quotes: Quote[] = [
     // Funny
     {
         id: "1",
@@ -787,4 +787,5 @@ export const allCategories: string[] = [
     "Success",
     "Friendship",
     "Wisdom",
+    "Advice",
 ];
