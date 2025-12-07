@@ -19,9 +19,27 @@ export function initOneSignalWeb() {
 }
 
 function initializeOneSignal() {
-  (window as any).OneSignalDeferred = (window as any).OneSignalDeferred || {};
-  (window as any).OneSignalDeferred.then(async (OneSignal: any) => {
-    console.log('OneSignal: Deferred promise resolved, OneSignal object:', typeof OneSignal);
+  const oneSignalDeferred = (window as any).OneSignalDeferred || (window as any).OneSignal;
+  
+  // OneSignalDeferred can be either a promise or an array queue
+  if (oneSignalDeferred && typeof oneSignalDeferred.then === 'function') {
+    // It's a promise
+    oneSignalDeferred.then(async (OneSignal: any) => {
+      console.log('OneSignal: Deferred promise resolved, OneSignal object:', typeof OneSignal);
+      await initOneSignalInstance(OneSignal);
+    });
+  } else {
+    // It's the old queue style or already initialized
+    (window as any).OneSignal = (window as any).OneSignal || [];
+    (window as any).OneSignal.push(async function(OneSignal: any) {
+      console.log('OneSignal: Queue callback executing, OneSignal object:', typeof OneSignal);
+      await initOneSignalInstance(OneSignal);
+    });
+  }
+}
+
+async function initOneSignalInstance(OneSignal: any) {
+    console.log('OneSignal: Initializing instance');
     try {
       await OneSignal.init({
         appId: 'b04c3e41-0909-471e-8c99-b4ce6b83466a',
@@ -230,7 +248,6 @@ function initializeOneSignal() {
     } catch (e) {
       console.warn('OneSignal init failed', e);
     }
-  });
 }
 
 /**
@@ -245,21 +262,36 @@ export async function setOneSignalExternalUserId(supabaseUserId: string) {
     console.log('OneSignal: setExternalUserId called with:', supabaseUserId);
     
     // Wait for OneSignal to be ready
-    if (typeof (window as any).OneSignalDeferred === 'undefined') {
+    const maxWait = 50; // 5 seconds max
+    let attempts = 0;
+    while (typeof (window as any).OneSignalDeferred === 'undefined' && typeof (window as any).OneSignal === 'undefined' && attempts < maxWait) {
       console.log('OneSignal: SDK not loaded yet, waiting...');
-      await new Promise(resolve => {
-        const checkInterval = setInterval(() => {
-          if (typeof (window as any).OneSignalDeferred !== 'undefined') {
-            clearInterval(checkInterval);
-            resolve(true);
-          }
-        }, 100);
-      });
+      await new Promise(resolve => setTimeout(resolve, 100));
+      attempts++;
     }
     
-    (window as any).OneSignalDeferred.then(async (OneSignal: any) => {
-      console.log('OneSignal: setExternalUserId - OneSignal ready');
-      
+    const oneSignalDeferred = (window as any).OneSignalDeferred || (window as any).OneSignal;
+    
+    if (oneSignalDeferred && typeof oneSignalDeferred.then === 'function') {
+      // It's a promise
+      oneSignalDeferred.then(async (OneSignal: any) => {
+        console.log('OneSignal: setExternalUserId - OneSignal ready');
+        await setExternalUserIdOnInstance(OneSignal, supabaseUserId);
+      });
+    } else {
+      // Use queue style
+      (window as any).OneSignal = (window as any).OneSignal || [];
+      (window as any).OneSignal.push(async function(OneSignal: any) {
+        console.log('OneSignal: setExternalUserId - OneSignal ready (queue)');
+        await setExternalUserIdOnInstance(OneSignal, supabaseUserId);
+      });
+    }
+  } catch (e) {
+    console.warn('OneSignal: error setting external user ID', e);
+  }
+}
+
+async function setExternalUserIdOnInstance(OneSignal: any, supabaseUserId: string) {
       // First, set the external user ID
       await OneSignal.setExternalUserId?.(supabaseUserId);
       console.log('OneSignal: set external user ID:', supabaseUserId);
@@ -290,10 +322,6 @@ export async function setOneSignalExternalUserId(supabaseUserId: string) {
       await new Promise(resolve => setTimeout(resolve, 1000));
       const playerId = await OneSignal.getUserId?.();
       console.log('OneSignal: final player ID:', playerId);
-    });
-  } catch (e) {
-    console.warn('OneSignal: error setting external user ID', e);
-  }
 }
 
 /**
