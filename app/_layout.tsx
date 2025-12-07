@@ -13,8 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ensureProfile } from '../utils/ensureProfile';
 import SupportUsBar from "../components/SupportUsBar";
 import { usePathname } from "expo-router";
-import { initOneSignalWeb, setOneSignalExternalUserId } from "../lib/onesignalWeb";
-import { initOneSignalNative } from "../lib/onesignalInit";
+import { subscribeFCM, listenForMessages } from '../lib/fcmHelper';
 
 const notificationHandler: sNotifications.NotificationHandler = {
   handleNotification: async () => ({
@@ -114,24 +113,7 @@ export default function RootLayout() {
   const [userId, setUserId] = useState<string | null>(null);
   const permissionRequestedRef = useRef(false);
 
-  // Initialize OneSignal (web or native) from inside the component
-  useEffect(() => {
-    try {
-      if (Platform.OS === 'web') initOneSignalWeb();
-      else initOneSignalNative();
-    } catch (e) {
-      console.warn('OneSignal init failed:', e);
-    }
-  }, []);
 
-  // Set OneSignal external user ID when user logs in
-  useEffect(() => {
-    console.log('[Layout] useEffect[userId] triggered, userId:', userId, 'Platform.OS:', Platform.OS);
-    if (userId && Platform.OS === 'web') {
-      console.log('[Layout] calling setOneSignalExternalUserId with:', userId);
-      setOneSignalExternalUserId(userId);
-    }
-  }, [userId]);
 
   const pathname = usePathname();
   const showSupport = !pathname?.startsWith("/settings");
@@ -175,8 +157,23 @@ useEffect(() => {
   return () => { mounted = false; subscription?.unsubscribe(); };
 }, []);
 
+  // Initialize FCM for web
+  useEffect(() => {
+    if (Platform.OS === 'web' && userId) {
+      subscribeFCM(userId).catch(err => console.log('FCM subscription error:', err));
+      listenForMessages();
+    }
+  }, [userId]);
+
   useEffect(() => {
     if (Platform.OS === "web" && "serviceWorker" in navigator) {
+      // Register Firebase messaging service worker
+      navigator.serviceWorker
+        .register("/firebase-messaging-sw.js")
+        .then((reg) => console.log("Firebase SW registered:", reg.scope))
+        .catch((err) => console.log("Firebase SW registration failed:", err));
+      
+      // Register app service worker
       navigator.serviceWorker
         .register("/sw.js", { scope: "/" })
         .then((reg) => console.log("SW registered:", reg.scope))
@@ -231,7 +228,6 @@ useEffect(() => {
             })
           }} />
           <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
-          <script defer src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
