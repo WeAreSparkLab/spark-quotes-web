@@ -13,9 +13,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ensureProfile } from '../utils/ensureProfile';
 import SupportUsBar from "../components/SupportUsBar";
 import { usePathname } from "expo-router";
-
-
-
+import { initOneSignalWeb, setOneSignalExternalUserId } from "../lib/onesignalWeb";
+import { initOneSignalNative } from "../lib/onesignalInit";
 
 const notificationHandler: sNotifications.NotificationHandler = {
   handleNotification: async () => ({
@@ -115,6 +114,25 @@ export default function RootLayout() {
   const [userId, setUserId] = useState<string | null>(null);
   const permissionRequestedRef = useRef(false);
 
+  // Initialize OneSignal (web or native) from inside the component
+  useEffect(() => {
+    try {
+      if (Platform.OS === 'web') initOneSignalWeb();
+      else initOneSignalNative();
+    } catch (e) {
+      console.warn('OneSignal init failed:', e);
+    }
+  }, []);
+
+  // Set OneSignal external user ID when user logs in
+  useEffect(() => {
+    console.log('[Layout] useEffect[userId] triggered, userId:', userId, 'Platform.OS:', Platform.OS);
+    if (userId && Platform.OS === 'web') {
+      console.log('[Layout] calling setOneSignalExternalUserId with:', userId);
+      setOneSignalExternalUserId(userId);
+    }
+  }, [userId]);
+
   const pathname = usePathname();
   const showSupport = !pathname?.startsWith("/settings");
 
@@ -125,10 +143,12 @@ useEffect(() => {
     try {
       // 1) Get current session
       const { data: { session } } = await supabase.auth.getSession();
+      console.log('[Layout] getSession result:', session?.user?.id);
       if (!mounted) return;
 
       setSession(session ?? null);
       setUserId(session?.user?.id ?? null);
+      console.log('[Layout] userId set to:', session?.user?.id);
 
       // 2) Ensure profile if logged in
       if (session?.user?.id) {
@@ -211,6 +231,7 @@ useEffect(() => {
             })
           }} />
           <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
+          <script defer src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Spark Quotes" />

@@ -29,6 +29,23 @@ export const schedulePushNotification = async (
     return;
   }
 
+  // Ensure we have notification permissions before scheduling.
+  try {
+    const { status: existingStatus } = await Notifications.getPermissionsAsync();
+    let finalStatus = existingStatus;
+    if (existingStatus !== 'granted') {
+      const { status } = await Notifications.requestPermissionsAsync();
+      finalStatus = status;
+    }
+    if (finalStatus !== 'granted') {
+      console.warn('Notification permission not granted. Skipping schedule.');
+      return;
+    }
+  } catch (e) {
+    console.error('Failed to get/request notification permissions:', e);
+    return;
+  }
+
   await Notifications.cancelAllScheduledNotificationsAsync();
   console.log('Previous notifications cancelled.');
 
