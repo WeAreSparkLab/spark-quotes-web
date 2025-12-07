@@ -165,6 +165,38 @@ useEffect(() => {
     }
   }, [userId]);
 
+  // Register for mobile push notifications
+  useEffect(() => {
+    if (Platform.OS !== 'web' && userId) {
+      registerForPushNotificationsAsync().then(async (status) => {
+        if (status === 'granted') {
+          try {
+            const token = await sNotifications.getExpoPushTokenAsync();
+            console.log('Expo push token:', token.data);
+            
+            // Save token to Supabase
+            const { error } = await supabase
+              .from('expo_push_tokens')
+              .upsert({
+                user_id: userId,
+                token: token.data,
+                device_type: Platform.OS,
+                updated_at: new Date()
+              });
+            
+            if (error) {
+              console.error('Error saving Expo push token:', error);
+            } else {
+              console.log('Expo push token saved successfully');
+            }
+          } catch (e) {
+            console.error('Error getting Expo push token:', e);
+          }
+        }
+      });
+    }
+  }, [userId]);
+
   useEffect(() => {
     if (Platform.OS === "web" && "serviceWorker" in navigator) {
       // Register Firebase messaging service worker
