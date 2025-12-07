@@ -24,7 +24,6 @@ import { schedulePushNotification } from "../utils/schedulePushNotification";
 import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
-import NotificationSettings from '../components/NotificationSettings';
 import { shareApp } from "../utils/shareApp";
 import { openCoffee, openTipChooser, getStripeCTA } from "../utils/support";
 import { LINKS } from "../utils/support";
@@ -417,13 +416,6 @@ export default function Settings() {
         contentContainerStyle={[styles.scrollView, { paddingBottom: 40 }]}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Notification Settings Component */}
-        {Platform.OS === 'web' && userId && (
-          <View style={styles.settingCard}>
-            <NotificationSettings />
-          </View>
-        )}
-
         {/* Notifications */}
         <View style={styles.settingCard}>
           <View style={styles.rowBetween}>
