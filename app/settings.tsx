@@ -102,7 +102,7 @@ function InstallAppRow() {
 // ----------------- START Settings component AFTER InstallAppRow closes -----------------
 export default function Settings() {
   const router = useRouter();
-  const { session } = useSupabase();
+  const { session, userId } = useSupabase();
 
   // iOS Safari has no prompt – show steps
   const isiOSWeb = Platform.OS === "web" && /iPad|iPhone|iPod/.test(navigator.userAgent);
