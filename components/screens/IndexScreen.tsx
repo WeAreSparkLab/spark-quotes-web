@@ -187,7 +187,8 @@ export default function IndexScreen() {
               alignSelf: "stretch",
             },
           ]}
-        >          <Text style={styles.sceneTitle}>Spark Quotes</Text>
+        >
+          <Text style={styles.sceneTitle}>Spark Quotes</Text>
           <Text style={styles.sceneSubtitle}>Your Quote of the Day</Text>
         </View>
 

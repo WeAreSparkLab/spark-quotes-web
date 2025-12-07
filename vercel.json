@@ -2,6 +2,7 @@
   "buildCommand": "npm run build:web",
   "outputDirectory": "dist",
   "cleanUrls": true,
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD",
   "headers": [
     {
       "source": "/manifest.webmanifest",

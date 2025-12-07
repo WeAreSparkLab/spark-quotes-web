@@ -21,14 +21,27 @@ if (isReactNative) {
   } catch (e) {
     console.log('[Supabase] AsyncStorage not available:', e);
   }
+} else if (typeof window !== 'undefined' && window.localStorage) {
+  // Web: use localStorage so Supabase sessions persist across reloads
+  storage = {
+    getItem: (key: string) => Promise.resolve(window.localStorage.getItem(key)),
+    setItem: (key: string, value: string) => {
+      window.localStorage.setItem(key, value);
+      return Promise.resolve();
+    },
+    removeItem: (key: string) => {
+      window.localStorage.removeItem(key);
+      return Promise.resolve();
+    },
+  };
 }
 
 export const supabase = createClient(url, anon, {
   auth: {
-    // On RN: use AsyncStorage. On web/SSR: no custom storage (uses localStorage at runtime).
+    // On RN: use AsyncStorage. On web: use localStorage adapter above.
     ...(storage ? { storage } : {}),
-    persistSession: !!storage,          // disable during SSR/web build
-    autoRefreshToken: !!storage,        // disable during SSR/web build
-    detectSessionInUrl: !storage,       // true on web
+    persistSession: !!storage,
+    autoRefreshToken: !!storage,
+    detectSessionInUrl: !isReactNative, // enable URL detection on web
   },
 });
