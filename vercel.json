@@ -3,6 +3,12 @@
   "outputDirectory": "dist",
   "cleanUrls": true,
   "ignoreCommand": "git diff --quiet HEAD^ HEAD",
+  "crons": [
+    {
+      "path": "/api/send-notifications",
+      "schedule": "0 * * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/manifest.webmanifest",

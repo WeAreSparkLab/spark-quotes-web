@@ -24,6 +24,7 @@ import { schedulePushNotification } from "../utils/schedulePushNotification";
 import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
+import NotificationSettings from '../components/NotificationSettings';
 import { shareApp } from "../utils/shareApp";
 import { openCoffee, openTipChooser, getStripeCTA } from "../utils/support";
 import { LINKS } from "../utils/support";
@@ -257,6 +258,48 @@ export default function Settings() {
       await AsyncStorage.setItem("selectedDays", JSON.stringify(selectedDays));
       await AsyncStorage.setItem("selectedTimes", JSON.stringify(selectedTimes));
 
+      // Save to Supabase for web notifications
+      if (Platform.OS === 'web' && userId) {
+        // Map Morning/Afternoon/Night to specific times
+        const timeMap: { [key: string]: string } = {
+          'Morning': '09:00',
+          'Afternoon': '15:00',
+          'Night': '21:00'
+        };
+        
+        // Convert selected times to hour format based on frequency
+        const notificationTimes: string[] = [];
+        const frequency = parseInt(dailyFrequency);
+        
+        if (frequency >= 1 && selectedTimes.includes('Morning')) notificationTimes.push('09:00');
+        if (frequency >= 2 && selectedTimes.includes('Afternoon')) notificationTimes.push('15:00');
+        if (frequency >= 3 && selectedTimes.includes('Night')) notificationTimes.push('21:00');
+        
+        // Add additional times based on frequency
+        if (frequency >= 4) notificationTimes.push('12:00');
+        if (frequency >= 5) notificationTimes.push('18:00');
+        
+        try {
+          const { error } = await supabase
+            .from('notification_preferences')
+            .upsert({
+              user_id: userId,
+              enabled: notificationsEnabled,
+              times: notificationTimes,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              updated_at: new Date()
+            });
+          
+          if (error) {
+            console.error('Error saving notification preferences:', error);
+          } else {
+            console.log('Notification preferences saved to Supabase');
+          }
+        } catch (e) {
+          console.error('Failed to save notification preferences:', e);
+        }
+      }
+
       if (notificationsEnabled) {
         try {
           await schedulePushNotification(dailyFrequency, selectedDays, selectedTimes);
@@ -374,6 +417,13 @@ export default function Settings() {
         contentContainerStyle={[styles.scrollView, { paddingBottom: 40 }]}
         keyboardShouldPersistTaps="handled"
       >
+        {/* Notification Settings Component */}
+        {Platform.OS === 'web' && userId && (
+          <View style={styles.settingCard}>
+            <NotificationSettings />
+          </View>
+        )}
+
         {/* Notifications */}
         <View style={styles.settingCard}>
           <View style={styles.rowBetween}>
