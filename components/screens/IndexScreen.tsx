@@ -208,12 +208,6 @@ export default function IndexScreen() {
                   <Text style={AppStyles.categoryText}>{currentQuote.category}</Text>
                 </View>
 
-                {/* Report (UGC) */}
-                <TouchableOpacity onPress={handleReport} style={styles.reportButton}>
-                  <Ionicons name="flag-outline" size={22} color="#9B9B9B" />
-                  <Text style={styles.reportText}>Report</Text>
-                </TouchableOpacity>
-
                 {/* Favorite (requires login) */}
                 {userId && (
                   <TouchableOpacity onPress={handleFavoriteToggle} style={styles.favoriteButton}>
