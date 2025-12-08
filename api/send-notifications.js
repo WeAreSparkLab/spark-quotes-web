@@ -16,28 +16,59 @@ export default async function handler(req, res) {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const now = new Date();
-    const currentTime = `${String(now.getUTCHours()).padStart(2, '0')}:00`;
+    const currentUTCHour = now.getUTCHours();
+    const currentTime = `${String(currentUTCHour).padStart(2, '0')}:00`;
     
-    console.log(`[${new Date().toISOString()}] Checking at ${currentTime} UTC`);
+    console.log(`[${now.toISOString()}] Checking at ${currentTime} UTC (hour ${currentUTCHour})`);
     
-    const { data: preferences, error: prefError } = await supabase
+    // Fetch ALL enabled preferences with their timezones
+    const { data: allPreferences, error: prefError } = await supabase
       .from('notification_preferences')
-      .select('user_id')
-      .eq('enabled', true)
-      .contains('times', [currentTime]);
+      .select('user_id, times, timezone')
+      .eq('enabled', true);
     
     if (prefError) {
       console.error('Error fetching preferences:', prefError);
       return res.status(500).json({ error: prefError.message });
     }
     
-    if (!preferences || preferences.length === 0) {
-      console.log('No users for this time');
-      return res.status(200).json({ message: 'No notifications', time: currentTime });
+    if (!allPreferences || allPreferences.length === 0) {
+      console.log('No enabled users');
+      return res.status(200).json({ message: 'No enabled users', time: currentTime });
     }
     
-    const userIds = preferences.map(p => p.user_id);
-    console.log(`Found ${preferences.length} users`);
+    // Filter users who should receive notification at this UTC hour based on their timezone
+    const usersToNotify = allPreferences.filter(pref => {
+      if (!pref.timezone || !pref.times || pref.times.length === 0) return false;
+      
+      try {
+        // For each saved time (e.g., "09:00"), check if it matches current UTC hour in their timezone
+        return pref.times.some(localTime => {
+          const [hours] = localTime.split(':').map(Number);
+          
+          // Get current time in user's timezone
+          const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: pref.timezone }));
+          const userLocalHour = userLocalTime.getHours();
+          
+          return userLocalHour === hours;
+        });
+      } catch (e) {
+        console.error(`Error processing timezone for user ${pref.user_id}:`, e);
+        return false;
+      }
+    });
+    
+    if (usersToNotify.length === 0) {
+      console.log(`No users scheduled for this hour (${allPreferences.length} total enabled users)`);
+      return res.status(200).json({ 
+        message: 'No users for this time', 
+        time: currentTime,
+        totalEnabled: allPreferences.length 
+      });
+    }
+    
+    const userIds = usersToNotify.map(p => p.user_id);
+    console.log(`Found ${usersToNotify.length} users for hour ${currentUTCHour}`);
     
     const { data: quotes } = await supabase.from('quotes').select('quote,author').limit(1);
     const quote = quotes?.[0] || { quote: 'Daily inspiration!', author: 'Spark Quotes' };
@@ -99,7 +130,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       success: true,
       time: currentTime,
-      users: preferences.length,
+      users: usersToNotify.length,
       sent,
       quote: `"${quote.quote}" — ${quote.author}`
     });
