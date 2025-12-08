@@ -6,8 +6,9 @@ const CRON_SECRET = process.env.CRON_SECRET;
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
 
 export default async function handler(req, res) {
-  const authHeader = req.headers['authorization'];
-  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+  // Vercel cron sends secret as query param
+  const secret = req.query.secret || req.headers['authorization']?.replace('Bearer ', '');
+  if (secret !== CRON_SECRET) {
     console.log('Unauthorized - invalid CRON_SECRET');
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -15,7 +16,7 @@ export default async function handler(req, res) {
   try {
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const now = new Date();
-    const currentTime = `:00`;
+    const currentTime = `${String(now.getUTCHours()).padStart(2, '0')}:00`;
     
     console.log(`[${new Date().toISOString()}] Checking at ${currentTime} UTC`);
     
@@ -59,8 +60,8 @@ export default async function handler(req, res) {
           message: {
             token,
             notification: {
-              title: ' Your Daily Quote',
-              body: `"${quote.quote}"  ${quote.author}`,
+              title: '✨ Your Daily Quote',
+              body: `"${quote.quote}" — ${quote.author}`,
             },
             webpush: {
               notification: {
@@ -100,7 +101,7 @@ export default async function handler(req, res) {
       time: currentTime,
       users: preferences.length,
       sent,
-      quote: `"${quote.quote}"  ${quote.author}"`
+      quote: `"${quote.quote}" — ${quote.author}`
     });
     
   } catch (error) {
@@ -121,7 +122,7 @@ async function getAccessToken(serviceAccount) {
   };
   
   const jwtClaimSetEncoded = Buffer.from(JSON.stringify(jwtClaimSet)).toString('base64url');
-  const signatureInput = `{jwtHeader}.{jwtClaimSetEncoded}`;
+  const signatureInput = `${jwtHeader}.${jwtClaimSetEncoded}`;
   
   const privateKey = await crypto.subtle.importKey(
     'pkcs8',
@@ -138,7 +139,7 @@ async function getAccessToken(serviceAccount) {
   );
   
   const signatureEncoded = Buffer.from(signature).toString('base64url');
-  const jwt = `{signatureInput}.{signatureEncoded}`;
+  const jwt = `${signatureInput}.${signatureEncoded}`;
   
   const response = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
