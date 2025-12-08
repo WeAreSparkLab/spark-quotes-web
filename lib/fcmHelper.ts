@@ -22,18 +22,25 @@ export async function requestNotificationPermission() {
 }
 
 export async function subscribeFCM(userId: string) {
+  console.log('subscribeFCM called with userId:', userId);
   const token = await requestNotificationPermission();
+  console.log('FCM token obtained:', token ? `${token.substring(0, 20)}...` : 'null');
+  
   if (token) {
-    const { error } = await supabase
+    console.log('Attempting to store FCM token in database...');
+    const { data, error } = await supabase
       .from('fcm_tokens')
-      .upsert({ user_id: userId, token: token, updated_at: new Date() }, { onConflict: 'user_id,token' });
+      .upsert({ user_id: userId, token: token, updated_at: new Date().toISOString() }, { onConflict: 'user_id,token' });
     
-    if (error && error.code !== '23505') {
-      // Ignore duplicate key errors (23505)
+    console.log('Upsert result:', { data, error });
+    
+    if (error) {
       console.error('Error storing FCM token:', error);
-    } else if (!error) {
-      console.log('FCM token stored successfully');
+    } else {
+      console.log('✅ FCM token stored successfully in database');
     }
+  } else {
+    console.warn('No FCM token to store - permission may have been denied');
   }
 }
 
