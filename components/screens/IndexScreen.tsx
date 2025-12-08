@@ -185,6 +185,7 @@ export default function IndexScreen() {
               paddingHorizontal: Platform.OS === "web" ? 16 : 0,
               marginHorizontal: 0,
               alignSelf: "stretch",
+              paddingTop: Platform.OS === "web" ? 80 : undefined,
             },
           ]}
         >
