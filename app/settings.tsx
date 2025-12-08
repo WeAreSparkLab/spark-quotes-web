@@ -554,13 +554,15 @@ export default function Settings() {
         </View>
 
         {/* Save Changes Button */}
-        <TouchableOpacity
-          style={[styles.saveButton, saving && { opacity: 0.7 }]}
-          onPress={handleSaveChanges}
-          disabled={saving}
-        >
-          <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
-        </TouchableOpacity>
+        <View style={styles.settingCard}>
+          <TouchableOpacity
+            style={[styles.saveButton, saving && { opacity: 0.7 }]}
+            onPress={handleSaveChanges}
+            disabled={saving}
+          >
+            <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Legal */}
         <View style={styles.settingCard}>
@@ -796,11 +798,11 @@ const styles = StyleSheet.create({
 
   saveButton: {
     backgroundColor: "#6672E7",
-    marginHorizontal: 15,
-    marginBottom: 10,
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
+    minHeight: 48,
+    justifyContent: "center",
   },
   saveButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
 

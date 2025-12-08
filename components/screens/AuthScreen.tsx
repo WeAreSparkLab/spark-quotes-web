@@ -20,6 +20,13 @@ export default function AuthScreen() {
     setLoading(true);
     setMessage('');
 
+    // Validate password length
+    if (password.length < 8) {
+      setMessage('Password must be at least 8 characters long.');
+      setLoading(false);
+      return;
+    }
+
     try {
       if (isLogin) {
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -53,6 +60,12 @@ export default function AuthScreen() {
     }
   };
 
+  const handleKeyPress = (e: any) => {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      handleAuth();
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -71,14 +84,16 @@ export default function AuthScreen() {
           autoCapitalize="none"
           value={email}
           onChangeText={setEmail}
+          onKeyPress={handleKeyPress}
         />
         <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Password (min 8 characters)"
           placeholderTextColor="#B0B0B0"
           secureTextEntry
           value={password}
           onChangeText={setPassword}
+          onKeyPress={handleKeyPress}
         />
 
         {!!message && <Text style={styles.message}>{message}</Text>}
