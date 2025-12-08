@@ -20,7 +20,6 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Switch from "../components/common/Switch";
-import { schedulePushNotification } from "../utils/schedulePushNotification";
 import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
 import SupportSection from '../components/SupportSection'
@@ -279,15 +278,40 @@ export default function Settings() {
         if (frequency >= 5) notificationTimes.push('18:00');
         
         try {
-          const { error } = await supabase
+          // First, try to update existing record
+          const { data: existing } = await supabase
             .from('notification_preferences')
-            .upsert({
-              user_id: userId,
-              enabled: notificationsEnabled,
-              times: notificationTimes,
-              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-              updated_at: new Date()
-            });
+            .select('id')
+            .eq('user_id', userId)
+            .single();
+          
+          let error;
+          if (existing) {
+            // Update existing record
+            const result = await supabase
+              .from('notification_preferences')
+              .update({
+                enabled: notificationsEnabled,
+                times: notificationTimes,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userId);
+            error = result.error;
+          } else {
+            // Insert new record
+            const result = await supabase
+              .from('notification_preferences')
+              .insert({
+                user_id: userId,
+                enabled: notificationsEnabled,
+                times: notificationTimes,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+            error = result.error;
+          }
           
           if (error) {
             console.error('Error saving notification preferences:', error);
@@ -296,14 +320,6 @@ export default function Settings() {
           }
         } catch (e) {
           console.error('Failed to save notification preferences:', e);
-        }
-      }
-
-      if (notificationsEnabled) {
-        try {
-          await schedulePushNotification(dailyFrequency, selectedDays, selectedTimes);
-        } catch (e) {
-          console.log("schedulePushNotification failed", e);
         }
       }
 
@@ -340,35 +356,65 @@ export default function Settings() {
   };
 
   const confirmDelete = () => {
-    Alert.alert(
-      "Delete account",
-      "This permanently deletes your account and related data. This cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: deleteAccount },
-      ]
-    );
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(
+        "Delete account?\n\nThis permanently deletes your account and related data. This cannot be undone."
+      );
+      if (confirmed) {
+        deleteAccount();
+      }
+    } else {
+      Alert.alert(
+        "Delete account",
+        "This permanently deletes your account and related data. This cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Delete", style: "destructive", onPress: deleteAccount },
+        ]
+      );
+    }
   };
 
   const deleteAccount = async () => {
     if (!session?.user) return;
     setDeleting(true);
     try {
-      // calls your Edge Function (make sure it's deployed)
-      const { error } = await supabase.functions.invoke("delete-account", {
-        body: {},
-      });
-      if (error) throw error;
-
+      const userId = session.user.id;
+      
+      // Delete user data from tables
+      await Promise.all([
+        supabase.from('favorites').delete().eq('user_id', userId),
+        supabase.from('notification_preferences').delete().eq('user_id', userId),
+        supabase.from('fcm_tokens').delete().eq('user_id', userId),
+        supabase.from('profiles').delete().eq('id', userId),
+      ]);
+      
+      // Delete the auth user
+      const { error } = await supabase.rpc('delete_user');
+      if (error) {
+        console.log('RPC delete_user not available, signing out instead');
+      }
+      
       await supabase.auth.signOut();
-      Alert.alert("Account deleted", "Your account has been removed.");
+      
+      if (Platform.OS === 'web') {
+        alert("Account deleted. Your account and data have been removed.");
+      } else {
+        Alert.alert("Account deleted", "Your account and data have been removed.");
+      }
+      
       router.replace("/");
     } catch (e: any) {
       console.error("Delete account failed:", e?.message ?? e);
-      Alert.alert(
-        "Could not delete",
-        "Please try again later or contact support."
-      );
+      
+      if (Platform.OS === 'web') {
+        alert("Could not delete\n\nSome data was deleted. Please contact support if issues persist.");
+      } else {
+        Alert.alert(
+          "Could not delete",
+          "Some data was deleted. Please contact support if issues persist."
+        );
+      }
     } finally {
       setDeleting(false);
     }
@@ -506,6 +552,15 @@ export default function Settings() {
             ))}
           </View>
         </View>
+
+        {/* Save Changes Button */}
+        <TouchableOpacity
+          style={[styles.saveButton, saving && { opacity: 0.7 }]}
+          onPress={handleSaveChanges}
+          disabled={saving}
+        >
+          <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
+        </TouchableOpacity>
 
         {/* Legal */}
         <View style={styles.settingCard}>
@@ -655,13 +710,6 @@ export default function Settings() {
         )}
         <Pressable onPress={shareApp}><Text>Share</Text></Pressable>
 
-        <TouchableOpacity
-          style={[styles.saveButton, saving && { opacity: 0.7 }]}
-          onPress={handleSaveChanges}
-          disabled={saving}
-        >
-          <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
-        </TouchableOpacity>
         <InstallAppRow />
         {/* App updates */}
         <View style={styles.settingCard}>
