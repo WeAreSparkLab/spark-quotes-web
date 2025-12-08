@@ -6,25 +6,13 @@ import { StatusBar } from "expo-status-bar";
 import { supabase } from "../supabaseClient";
 import { Session } from "@supabase/supabase-js";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as sNotifications from "expo-notifications";
-import { Alert, Platform, StyleSheet, View } from "react-native";
+import { Platform, StyleSheet, View } from "react-native";
 import Head from 'expo-router/head';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ensureProfile } from '../utils/ensureProfile';
 import SupportUsBar from "../components/SupportUsBar";
 import { usePathname } from "expo-router";
 import { subscribeFCM, listenForMessages } from '../lib/fcmHelper';
-
-const notificationHandler: sNotifications.NotificationHandler = {
-  handleNotification: async () => ({
-    shouldShowBanner: true,
-    shouldShowList: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-};
-
-sNotifications.setNotificationHandler(notificationHandler);
 
 // Define the shape of your Supabase context
 interface SupabaseContextType {
@@ -46,66 +34,6 @@ export const useSupabase = () => {
   }
   return context;
 };
-
-// --- Function to Register for Notifications ---
-async function registerForPushNotificationsAsync(): Promise<string> {
-  if (Platform.OS === "android") {
-    await sNotifications.setNotificationChannelAsync("default", {
-      name: "default",
-      importance: sNotifications.AndroidImportance.MAX,
-      vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF231F7C",
-    });
-  }
-
-  // 2. Check existing permission status
-  const { status: existingStatus } = await sNotifications.getPermissionsAsync();
-
-  // 3. If already granted, return "granted" immediately
-  if (existingStatus === "granted") {
-    return "granted";
-  }
-  // 4. If not granted, show your custom pre-permission prompt
-  //    and await the user's decision from that prompt
-  const finalPermissionStatus = await new Promise<string>((resolve) => {
-    Alert.alert(
-      "Get Daily Inspiration!",
-      "Allow us to send you daily quotes to brighten your day. You can change this anytime in settings.",
-      [
-        {
-          text: "Not now",
-          onPress: () => {
-            console.log("Permission prompt dismissed by user.");
-            resolve("denied"); // User chose not now, so effectively denied for now
-          },
-          style: "cancel",
-        },
-        {
-          text: "Allow Notifications",
-          onPress: async () => {
-            // This triggers the system notification permission prompt
-            const { status } = await sNotifications.requestPermissionsAsync();
-            resolve(status); // Resolve with the status from the system prompt
-          },
-        },
-      ],
-      { cancelable: false }
-    );
-  });
-
-  // 5. After the user has interacted with both your custom prompt AND the system prompt (if shown)
-  //    Check the final outcome and provide feedback if permission wasn't granted.
-  if (finalPermissionStatus !== "granted") {
-    Alert.alert(
-      "Permission Required",
-      "Please enable push notifications in your device settings to receive daily quotes.",
-      [{ text: "OK" }]
-    );
-  }
-
-  // 6. Return the final permission status
-  return finalPermissionStatus;
-}
 
 export default function RootLayout() {
   const [supabaseInitialized, setSupabaseInitialized] = useState(false);
@@ -165,38 +93,6 @@ useEffect(() => {
     }
   }, [userId]);
 
-  // Register for mobile push notifications
-  useEffect(() => {
-    if (Platform.OS !== 'web' && userId) {
-      registerForPushNotificationsAsync().then(async (status) => {
-        if (status === 'granted') {
-          try {
-            const token = await sNotifications.getExpoPushTokenAsync();
-            console.log('Expo push token:', token.data);
-            
-            // Save token to Supabase
-            const { error } = await supabase
-              .from('expo_push_tokens')
-              .upsert({
-                user_id: userId,
-                token: token.data,
-                device_type: Platform.OS,
-                updated_at: new Date()
-              });
-            
-            if (error) {
-              console.error('Error saving Expo push token:', error);
-            } else {
-              console.log('Expo push token saved successfully');
-            }
-          } catch (e) {
-            console.error('Error getting Expo push token:', e);
-          }
-        }
-      });
-    }
-  }, [userId]);
-
   useEffect(() => {
     if (Platform.OS === "web" && "serviceWorker" in navigator) {
       // Register Firebase messaging service worker
@@ -211,20 +107,6 @@ useEffect(() => {
         .then((reg) => console.log("SW registered:", reg.scope))
         .catch((err) => console.log("SW registration failed:", err));
     }
-  }, []);
-
-  useEffect(() => {
-    if (Platform.OS === "web") return;
-    try {
-      sNotifications.setNotificationHandler({
-        handleNotification: async () => ({
-          shouldShowBanner: true,
-          shouldShowList: true,
-          shouldPlaySound: false,
-          shouldSetBadge: false,
-        }),
-      });
-    } catch { }
   }, []);
 
   async function ensureProfile(userId: string) {
