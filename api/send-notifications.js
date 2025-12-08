@@ -1,0 +1,163 @@
+﻿import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const CRON_SECRET = process.env.CRON_SECRET;
+const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
+
+export default async function handler(req, res) {
+  const authHeader = req.headers['authorization'];
+  if (authHeader !== `Bearer ${CRON_SECRET}`) {
+    console.log('Unauthorized - invalid CRON_SECRET');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+
+  try {
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const now = new Date();
+    const currentTime = `:00`;
+    
+    console.log(`[${new Date().toISOString()}] Checking at ${currentTime} UTC`);
+    
+    const { data: preferences, error: prefError } = await supabase
+      .from('notification_preferences')
+      .select('user_id')
+      .eq('enabled', true)
+      .contains('times', [currentTime]);
+    
+    if (prefError) {
+      console.error('Error fetching preferences:', prefError);
+      return res.status(500).json({ error: prefError.message });
+    }
+    
+    if (!preferences || preferences.length === 0) {
+      console.log('No users for this time');
+      return res.status(200).json({ message: 'No notifications', time: currentTime });
+    }
+    
+    const userIds = preferences.map(p => p.user_id);
+    console.log(`Found ${preferences.length} users`);
+    
+    const { data: quotes } = await supabase.from('quotes').select('quote,author').limit(1);
+    const quote = quotes?.[0] || { quote: 'Daily inspiration!', author: 'Spark Quotes' };
+    
+    const { data: fcmTokens } = await supabase
+      .from('fcm_tokens')
+      .select('token')
+      .in('user_id', userIds);
+    
+    let sent = 0;
+    console.log(`Found ${fcmTokens?.length || 0} FCM tokens`);
+    
+    if (fcmTokens && fcmTokens.length > 0 && FIREBASE_SERVICE_ACCOUNT) {
+      const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+      const accessToken = await getAccessToken(serviceAccount);
+      const projectId = serviceAccount.project_id;
+      
+      for (const { token } of fcmTokens) {
+        const message = {
+          message: {
+            token,
+            notification: {
+              title: ' Your Daily Quote',
+              body: `"${quote.quote}"  ${quote.author}`,
+            },
+            webpush: {
+              notification: {
+                icon: '/icons/icon-192x192.png',
+                badge: '/icons/icon-192x192.png',
+              },
+              fcm_options: { link: 'https://quotes.wearesparklab.com' }
+            },
+          }
+        };
+        
+        const response = await fetch(
+          `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(message),
+          }
+        );
+        
+        if (response.ok) {
+          sent++;
+          console.log(`Sent to token ${token.substring(0, 20)}...`);
+        } else {
+          console.error(`Failed: ${await response.text()}`);
+        }
+      }
+    } else if (!FIREBASE_SERVICE_ACCOUNT) {
+      console.warn('FIREBASE_SERVICE_ACCOUNT not set!');
+    }
+    
+    return res.status(200).json({
+      success: true,
+      time: currentTime,
+      users: preferences.length,
+      sent,
+      quote: `"${quote.quote}"  ${quote.author}"`
+    });
+    
+  } catch (error) {
+    console.error('Error:', error);
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+async function getAccessToken(serviceAccount) {
+  const jwtHeader = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+  const now = Math.floor(Date.now() / 1000);
+  const jwtClaimSet = {
+    iss: serviceAccount.client_email,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  };
+  
+  const jwtClaimSetEncoded = Buffer.from(JSON.stringify(jwtClaimSet)).toString('base64url');
+  const signatureInput = `{jwtHeader}.{jwtClaimSetEncoded}`;
+  
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    pemToArrayBuffer(serviceAccount.private_key),
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    privateKey,
+    new TextEncoder().encode(signatureInput)
+  );
+  
+  const signatureEncoded = Buffer.from(signature).toString('base64url');
+  const jwt = `{signatureInput}.{signatureEncoded}`;
+  
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt,
+    }),
+  });
+  
+  const data = await response.json();
+  return data.access_token;
+}
+
+function pemToArrayBuffer(pem) {
+  const base64 = pem
+    .replace(/-----BEGIN PRIVATE KEY-----/, '')
+    .replace(/-----END PRIVATE KEY-----/, '')
+    .replace(/\s/g, '');
+  const binary = Buffer.from(base64, 'base64');
+  return binary.buffer;
+}
