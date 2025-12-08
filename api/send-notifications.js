@@ -187,10 +187,14 @@ async function getAccessToken(serviceAccount) {
 }
 
 function pemToArrayBuffer(pem) {
-  const base64 = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, '')
-    .replace(/-----END PRIVATE KEY-----/, '')
+  // Handle both literal \n and actual newlines
+  const normalizedPem = pem.replace(/\\n/g, '\n');
+  
+  const base64 = normalizedPem
+    .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+    .replace(/-----END PRIVATE KEY-----/g, '')
     .replace(/\s/g, '');
+  
   const binary = Buffer.from(base64, 'base64');
   return binary.buffer;
 }
