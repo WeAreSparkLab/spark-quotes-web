@@ -1,7 +1,7 @@
 ﻿import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const CRON_SECRET = process.env.CRON_SECRET;
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
 
@@ -14,7 +14,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // Use service role key to bypass RLS
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const now = new Date();
     const currentUTCHour = now.getUTCHours();
     const currentTime = `${String(currentUTCHour).padStart(2, '0')}:00`;
