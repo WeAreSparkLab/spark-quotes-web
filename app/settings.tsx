@@ -278,16 +278,22 @@ export default function Settings() {
         if (frequency >= 5) notificationTimes.push('18:00');
         
         try {
+          console.log('Saving notification preferences for userId:', userId);
+          console.log('Preferences:', { enabled: notificationsEnabled, times: notificationTimes, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+          
           // First, try to update existing record
-          const { data: existing } = await supabase
+          const { data: existing, error: selectError } = await supabase
             .from('notification_preferences')
             .select('id')
             .eq('user_id', userId)
             .single();
           
-          let error;
+          console.log('Existing record check:', { existing, selectError });
+          
+          let error, data;
           if (existing) {
             // Update existing record
+            console.log('Updating existing notification preferences...');
             const result = await supabase
               .from('notification_preferences')
               .update({
@@ -298,8 +304,10 @@ export default function Settings() {
               })
               .eq('user_id', userId);
             error = result.error;
+            data = result.data;
           } else {
             // Insert new record
+            console.log('Inserting new notification preferences...');
             const result = await supabase
               .from('notification_preferences')
               .insert({
@@ -311,12 +319,15 @@ export default function Settings() {
                 updated_at: new Date().toISOString()
               });
             error = result.error;
+            data = result.data;
           }
           
+          console.log('Save result:', { data, error });
+          
           if (error) {
-            console.error('Error saving notification preferences:', error);
+            console.error('❌ Error saving notification preferences:', error);
           } else {
-            console.log('Notification preferences saved to Supabase');
+            console.log('✅ Notification preferences saved to Supabase successfully');
           }
         } catch (e) {
           console.error('Failed to save notification preferences:', e);
