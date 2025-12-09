@@ -99,9 +99,12 @@ export default async function handler(req, res) {
               notification: {
                 icon: '/icons/icon-512.png',
                 badge: '/icons/maskable-192.png',
-                image: '/icons/icon-512.png',
                 vibrate: [200, 100, 200],
-                requireInteraction: false
+                requireInteraction: false,
+                data: {
+                  url: 'https://quotes.wearesparklab.com/',
+                  action: 'open-app'
+                }
               },
               fcm_options: { link: 'https://quotes.wearesparklab.com' }
             },
