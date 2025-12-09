@@ -1,8 +1,8 @@
 # Simple icon generator using .NET System.Drawing
 Add-Type -AssemblyName System.Drawing
 
-$bgColor = [System.Drawing.Color]::FromArgb(14, 15, 29)
-$themeColor = [System.Drawing.Color]::FromArgb(102, 114, 231)
+$bgColor = [System.Drawing.Color]::FromArgb(102, 114, 231)  # Purple background
+$accentColor = [System.Drawing.Color]::FromArgb(255, 215, 0)  # Gold accent
 $white = [System.Drawing.Color]::White
 
 function Create-Icon {
@@ -29,8 +29,8 @@ function Create-Icon {
     $rect = New-Object System.Drawing.RectangleF(($center - $radius), ($center - $radius), ($radius * 2), ($radius * 2))
     $brush = New-Object System.Drawing.Drawing2D.LinearGradientBrush(
         $rect,
-        $themeColor,
-        [System.Drawing.Color]::FromArgb(77, $themeColor),
+        [System.Drawing.Color]::FromArgb(80, 90, 220),
+        [System.Drawing.Color]::FromArgb(120, 130, 240),
         45
     )
     $graphics.FillEllipse($brush, $rect)
@@ -42,19 +42,19 @@ function Create-Icon {
     $stringFormat.Alignment = [System.Drawing.StringAlignment]::Center
     $stringFormat.LineAlignment = [System.Drawing.StringAlignment]::Center
     
-    $whiteBrush = New-Object System.Drawing.SolidBrush($white)
+    $goldBrush = New-Object System.Drawing.SolidBrush($accentColor)
     
     # Left quote
     $quotePoint1 = New-Object System.Drawing.PointF(($Size * 0.3), ($Size * 0.4))
-    $graphics.DrawString('"', $font, $whiteBrush, $quotePoint1, $stringFormat)
+    $graphics.DrawString('"', $font, $goldBrush, $quotePoint1, $stringFormat)
     
     # Right quote
     $quotePoint2 = New-Object System.Drawing.PointF(($Size * 0.7), ($Size * 0.6))
-    $graphics.DrawString('"', $font, $whiteBrush, $quotePoint2, $stringFormat)
+    $graphics.DrawString('"', $font, $goldBrush, $quotePoint2, $stringFormat)
     
     # Draw small stars (simplified as circles)
     $starSize = $Size * 0.03
-    $starBrush = New-Object System.Drawing.SolidBrush($white)
+    $starBrush = New-Object System.Drawing.SolidBrush($accentColor)
     
     $offset = $contentSize * 0.35
     $graphics.FillEllipse($starBrush, ($center - $offset - $starSize), ($center - $offset - $starSize), ($starSize * 2), ($starSize * 2))
@@ -65,7 +65,7 @@ function Create-Icon {
     $graphics.Dispose()
     $brush.Dispose()
     $font.Dispose()
-    $whiteBrush.Dispose()
+    $goldBrush.Dispose()
     $starBrush.Dispose()
     
     return $bitmap
