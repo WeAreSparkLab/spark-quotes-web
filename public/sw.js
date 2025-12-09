@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_VERSION = 'v10-2025-12-09';        // bump every time you deploy
+const CACHE_VERSION = 'v11-2025-12-09';        // bump every time you deploy
 const RUNTIME = `spark-runtime-${CACHE_VERSION}`;
 const ASSET_CACHE = `spark-assets-${CACHE_VERSION}`;
 
@@ -18,6 +18,26 @@ self.addEventListener('activate', (event) => {
     // Control all clients without reload
     await self.clients.claim();
   })());
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  console.log('[SW] Notification clicked');
+  event.notification.close();
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Try to focus existing window
+        for (const client of clientList) {
+          if ('focus' in client) {
+            return client.focus();
+          }
+        }
+        // Otherwise open new window
+        return clients.openWindow('https://quotes.wearesparklab.com/');
+      })
+  );
 });
 
 // Helper: identify navigation requests (HTML)
