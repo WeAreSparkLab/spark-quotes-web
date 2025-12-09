@@ -511,10 +511,14 @@ export default function Settings() {
                       author: "Steve Jobs"
                     };
                     
+                    // Use absolute URL for icon to ensure it shows on mobile
+                    const iconUrl = new URL('/icons/icon-192.png', window.location.origin).href;
+                    const badgeUrl = new URL('/icons/maskable-192.png', window.location.origin).href;
+                    
                     await registration.showNotification('✨ Your Daily Quote', {
                       body: `"${testQuote.quote}" — ${testQuote.author}`,
-                      icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
-                      badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
+                      icon: iconUrl,
+                      badge: badgeUrl,
                       tag: 'test-notification',
                       requireInteraction: false,
                       vibrate: [200, 100, 200],
