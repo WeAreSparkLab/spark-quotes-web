@@ -14,11 +14,41 @@ const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
   console.log('Background message received:', payload);
-  const notificationTitle = payload.notification.title;
+  
+  const notificationTitle = payload.notification?.title || 'Spark Quotes';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: payload.notification.icon
+    body: payload.notification?.body || 'Your daily inspiration',
+    icon: payload.notification?.icon || '/icons/icon-192.png',
+    badge: '/icons/icon-192.png',
+    tag: 'spark-quotes-daily',
+    requireInteraction: false,
+    vibrate: [200, 100, 200],
+    data: {
+      url: payload.data?.url || '/',
+      dateOfArrival: Date.now()
+    },
+    actions: [
+      {
+        action: 'open',
+        title: 'Read Quote'
+      },
+      {
+        action: 'close',
+        title: 'Dismiss'
+      }
+    ]
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Handle notification clicks
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  
+  if (event.action === 'open' || !event.action) {
+    event.waitUntil(
+      clients.openWindow(event.notification.data?.url || '/')
+    );
+  }
 });

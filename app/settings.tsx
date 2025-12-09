@@ -491,25 +491,38 @@ export default function Settings() {
               style={[styles.testButton, { marginTop: 15 }]}
               onPress={async () => {
                 try {
-                  const response = await fetch('/api/send-notifications?secret=sparkquotes-cron-2025', {
-                    method: 'POST'
-                  });
-                  const result = await response.json();
-                  if (Platform.OS === 'web') {
-                    window.alert(result.message || 'Check your browser for the notification!');
+                  // Show a real browser notification instead of calling the API
+                  if ('Notification' in window && Notification.permission === 'granted') {
+                    // Get a random quote from local data or use a test quote
+                    const testQuote = {
+                      quote: "The only way to do great work is to love what you do.",
+                      author: "Steve Jobs"
+                    };
+                    
+                    new Notification('✨ Your Daily Quote', {
+                      body: `"${testQuote.quote}" — ${testQuote.author}`,
+                      icon: '/icons/icon-192.png',
+                      badge: '/icons/icon-192.png',
+                      tag: 'test-notification',
+                      requireInteraction: false
+                    });
+                  } else if ('Notification' in window) {
+                    // Request permission first
+                    const permission = await Notification.requestPermission();
+                    if (permission === 'granted') {
+                      new Notification('✨ Test Notification', {
+                        body: 'Notifications are now enabled! You will receive daily quotes.',
+                        icon: '/icons/icon-192.png'
+                      });
+                    } else {
+                      window.alert('Please allow notifications in your browser settings');
+                    }
                   } else {
-                    Alert.alert(
-                      'Test Notification',
-                      result.message || 'Check your browser for the notification!',
-                      [{ text: 'OK' }]
-                    );
+                    window.alert('Notifications not supported in this browser');
                   }
                 } catch (error) {
-                  if (Platform.OS === 'web') {
-                    window.alert('Failed to send test notification');
-                  } else {
-                    Alert.alert('Error', 'Failed to send test notification');
-                  }
+                  console.error('Notification error:', error);
+                  window.alert('Failed to send notification: ' + error.message);
                 }
               }}
             >
