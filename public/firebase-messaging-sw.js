@@ -18,16 +18,16 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || 'Spark Quotes';
   const notificationOptions = {
     body: payload.notification?.body || 'Your daily inspiration',
-    icon: payload.notification?.icon || '/icons/icon-512.png',
+    icon: '/icons/icon-512.png',
     badge: '/icons/maskable-192.png',
     tag: 'spark-quotes-daily',
     requireInteraction: false,
     vibrate: [200, 100, 200],
     data: {
-      url: payload.data?.url || '/',
-      dateOfArrival: Date.now()
+      url: payload.data?.url || 'https://quotes.wearesparklab.com/',
+      dateOfArrival: Date.now(),
+      action: 'open-app'
     },
-    image: '/icons/icon-512.png',
     actions: [
       {
         action: 'open',
@@ -45,11 +45,29 @@ messaging.onBackgroundMessage((payload) => {
 
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
+  console.log('Notification clicked:', event);
   event.notification.close();
   
-  if (event.action === 'open' || !event.action) {
-    event.waitUntil(
-      clients.openWindow(event.notification.data?.url || '/')
-    );
+  // Don't open if user clicked 'close' action
+  if (event.action === 'close') {
+    return;
   }
+  
+  const urlToOpen = event.notification.data?.url || 'https://quotes.wearesparklab.com/';
+  
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Check if app is already open
+        for (const client of clientList) {
+          if (client.url.includes('quotes.wearesparklab.com') && 'focus' in client) {
+            return client.focus();
+          }
+        }
+        // If not open, open new window
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
 });

@@ -518,8 +518,10 @@ export default function Settings() {
                       tag: 'test-notification',
                       requireInteraction: false,
                       vibrate: [200, 100, 200],
-                      data: { url: '/' },
-                      image: '/icons/icon-512.png'
+                      data: { 
+                        url: 'https://quotes.wearesparklab.com/',
+                        action: 'open-app'
+                      }
                     });
                   } else {
                     window.alert('Notifications not supported in this browser');
