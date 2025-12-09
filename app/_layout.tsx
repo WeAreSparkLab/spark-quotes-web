@@ -118,7 +118,9 @@ useEffect(() => {
       <StatusBar style="light" />
       <SupabaseContext.Provider value={{ supabaseInitialized, session, userId }}>
         <Head>
-          <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
+          <title>Spark Quotes — Your Daily Boost</title>
+          <link rel="manifest" href="/manifest.webmanifest" />
+          <link rel="stylesheet" href="/global.css" />
           <meta name="theme-color" content="#0E0F1D" />
           <meta name="description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
           <meta property="og:title" content="Spark Quotes — Your Daily Boost" />
