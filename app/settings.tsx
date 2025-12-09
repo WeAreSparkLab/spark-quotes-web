@@ -513,12 +513,13 @@ export default function Settings() {
                     
                     await registration.showNotification('✨ Your Daily Quote', {
                       body: `"${testQuote.quote}" — ${testQuote.author}`,
-                      icon: '/icons/icon-192.png',
-                      badge: '/icons/icon-192.png',
+                      icon: '/icons/icon-512.png',
+                      badge: '/icons/maskable-192.png',
                       tag: 'test-notification',
                       requireInteraction: false,
                       vibrate: [200, 100, 200],
-                      data: { url: '/' }
+                      data: { url: '/' },
+                      image: '/icons/icon-512.png'
                     });
                   } else {
                     window.alert('Notifications not supported in this browser');

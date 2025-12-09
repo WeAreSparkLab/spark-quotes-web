@@ -97,8 +97,11 @@ export default async function handler(req, res) {
             },
             webpush: {
               notification: {
-                icon: '/icons/icon-192x192.png',
-                badge: '/icons/icon-192x192.png',
+                icon: '/icons/icon-512.png',
+                badge: '/icons/maskable-192.png',
+                image: '/icons/icon-512.png',
+                vibrate: [200, 100, 200],
+                requireInteraction: false
               },
               fcm_options: { link: 'https://quotes.wearesparklab.com' }
             },
