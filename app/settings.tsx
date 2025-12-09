@@ -495,13 +495,21 @@ export default function Settings() {
                     method: 'POST'
                   });
                   const result = await response.json();
-                  Alert.alert(
-                    'Test Notification',
-                    result.message || 'Check your browser for the notification!',
-                    [{ text: 'OK' }]
-                  );
+                  if (Platform.OS === 'web') {
+                    window.alert(result.message || 'Check your browser for the notification!');
+                  } else {
+                    Alert.alert(
+                      'Test Notification',
+                      result.message || 'Check your browser for the notification!',
+                      [{ text: 'OK' }]
+                    );
+                  }
                 } catch (error) {
-                  Alert.alert('Error', 'Failed to send test notification');
+                  if (Platform.OS === 'web') {
+                    window.alert('Failed to send test notification');
+                  } else {
+                    Alert.alert('Error', 'Failed to send test notification');
+                  }
                 }
               }}
             >
