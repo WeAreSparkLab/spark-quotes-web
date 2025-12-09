@@ -513,7 +513,6 @@ export default function Settings() {
                       body: 'Tap to discover today\'s inspiration',
                       icon: iconUrl,
                       badge: badgeUrl,
-                      image: new URL('/icons/icon-512.png', window.location.origin).href,
                       tag: 'test-notification',
                       requireInteraction: false,
                       vibrate: [200, 100, 200],

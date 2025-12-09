@@ -20,7 +20,6 @@ messaging.onBackgroundMessage((payload) => {
     body: payload.notification?.body || 'Tap to discover today\'s inspiration',
     icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
     badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
-    image: 'https://quotes.wearesparklab.com/icons/icon-512.png',
     tag: 'spark-quotes-daily',
     requireInteraction: false,
     vibrate: [200, 100, 200],
