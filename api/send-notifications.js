@@ -99,7 +99,6 @@ export default async function handler(req, res) {
               notification: {
                 icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
                 badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
-                image: 'https://quotes.wearesparklab.com/icons/icon-512.png',
                 vibrate: [200, 100, 200],
                 requireInteraction: false,
                 data: {
