@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_VERSION = 'v11-2025-12-09';        // bump every time you deploy
+const CACHE_VERSION = 'v12-2025-12-09';        // bump every time you deploy
 const RUNTIME = `spark-runtime-${CACHE_VERSION}`;
 const ASSET_CACHE = `spark-assets-${CACHE_VERSION}`;
 
