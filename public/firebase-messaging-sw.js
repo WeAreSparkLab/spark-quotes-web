@@ -15,11 +15,12 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('Background message received:', payload);
   
-  const notificationTitle = payload.notification?.title || 'Spark Quotes';
+  const notificationTitle = payload.notification?.title || '✨ Your Daily Quote is Ready';
   const notificationOptions = {
-    body: payload.notification?.body || 'Your daily inspiration',
+    body: payload.notification?.body || 'Tap to discover today\'s inspiration',
     icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
     badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
+    image: 'https://quotes.wearesparklab.com/icons/icon-512.png',
     tag: 'spark-quotes-daily',
     requireInteraction: false,
     vibrate: [200, 100, 200],

@@ -505,20 +505,15 @@ export default function Settings() {
                     // Get service worker registration
                     const registration = await navigator.serviceWorker.ready;
                     
-                    // Use service worker to show notification (works on mobile)
-                    const testQuote = {
-                      quote: "The only way to do great work is to love what you do.",
-                      author: "Steve Jobs"
-                    };
-                    
                     // Use absolute URL for icon to ensure it shows on mobile
                     const iconUrl = new URL('/icons/icon-192.png', window.location.origin).href;
                     const badgeUrl = new URL('/icons/maskable-192.png', window.location.origin).href;
                     
-                    await registration.showNotification('✨ Your Daily Quote', {
-                      body: `"${testQuote.quote}" — ${testQuote.author}`,
+                    await registration.showNotification('✨ Your Daily Quote is Ready', {
+                      body: 'Tap to discover today\'s inspiration',
                       icon: iconUrl,
                       badge: badgeUrl,
+                      image: new URL('/icons/icon-512.png', window.location.origin).href,
                       tag: 'test-notification',
                       requireInteraction: false,
                       vibrate: [200, 100, 200],
