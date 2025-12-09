@@ -484,55 +484,6 @@ export default function Settings() {
               thumbColor={"#FFFFFF"}
             />
           </View>
-          
-          {/* Test Notification Button */}
-          {notificationsEnabled && Platform.OS === 'web' && (
-            <TouchableOpacity
-              style={[styles.testButton, { marginTop: 15 }]}
-              onPress={async () => {
-                try {
-                  // Check if service worker is available
-                  if ('serviceWorker' in navigator && 'Notification' in window) {
-                    // Request permission if needed
-                    if (Notification.permission !== 'granted') {
-                      const permission = await Notification.requestPermission();
-                      if (permission !== 'granted') {
-                        window.alert('Please allow notifications in your browser settings');
-                        return;
-                      }
-                    }
-                    
-                    // Get service worker registration
-                    const registration = await navigator.serviceWorker.ready;
-                    
-                    // Use absolute URL for icon to ensure it shows on mobile
-                    const iconUrl = new URL('/icons/icon-192.png', window.location.origin).href;
-                    const badgeUrl = new URL('/icons/maskable-192.png', window.location.origin).href;
-                    
-                    await registration.showNotification('✨ Your Daily Quote is Ready', {
-                      body: 'Tap to discover today\'s inspiration',
-                      icon: iconUrl,
-                      badge: badgeUrl,
-                      tag: 'test-notification',
-                      requireInteraction: false,
-                      vibrate: [200, 100, 200],
-                      data: { 
-                        url: 'https://quotes.wearesparklab.com/',
-                        action: 'open-app'
-                      }
-                    });
-                  } else {
-                    window.alert('Notifications not supported in this browser');
-                  }
-                } catch (error) {
-                  console.error('Notification error:', error);
-                  window.alert('Failed to send notification: ' + error.message);
-                }
-              }}
-            >
-              <Text style={styles.testButtonText}>🔔 Send Test Notification Now</Text>
-            </TouchableOpacity>
-          )}
         </View>
 
         {/* Daily Frequency */}

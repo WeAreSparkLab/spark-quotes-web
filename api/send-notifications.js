@@ -33,6 +33,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: prefError.message });
     }
     
+    console.log(`Found ${allPreferences?.length || 0} enabled users total`);
+    
     if (!allPreferences || allPreferences.length === 0) {
       console.log('No enabled users');
       return res.status(200).json({ message: 'No enabled users', time: currentTime });
@@ -40,19 +42,27 @@ export default async function handler(req, res) {
     
     // Filter users who should receive notification at this UTC hour based on their timezone
     const usersToNotify = allPreferences.filter(pref => {
-      if (!pref.timezone || !pref.times || pref.times.length === 0) return false;
+      if (!pref.timezone || !pref.times || pref.times.length === 0) {
+        console.log(`User ${pref.user_id.substring(0, 8)} skipped: missing timezone or times`);
+        return false;
+      }
       
       try {
         // For each saved time (e.g., "09:00"), check if it matches current UTC hour in their timezone
-        return pref.times.some(localTime => {
+        const shouldNotify = pref.times.some(localTime => {
           const [hours] = localTime.split(':').map(Number);
           
           // Get current time in user's timezone
           const userLocalTime = new Date(now.toLocaleString('en-US', { timeZone: pref.timezone }));
           const userLocalHour = userLocalTime.getHours();
           
-          return userLocalHour === hours;
+          const matches = userLocalHour === hours;
+          console.log(`User ${pref.user_id.substring(0, 8)}: timezone=${pref.timezone}, localHour=${userLocalHour}, wantedHours=${pref.times.join(',')}, checking ${hours}, matches=${matches}`);
+          
+          return matches;
         });
+        
+        return shouldNotify;
       } catch (e) {
         console.error(`Error processing timezone for user ${pref.user_id}:`, e);
         return false;
@@ -60,16 +70,27 @@ export default async function handler(req, res) {
     });
     
     if (usersToNotify.length === 0) {
+      // Debug: show what times users ARE configured for
+      const debugInfo = allPreferences.map(p => ({
+        user_id: p.user_id.substring(0, 8),
+        timezone: p.timezone,
+        times: p.times,
+        currentLocalHour: p.timezone ? new Date(now.toLocaleString('en-US', { timeZone: p.timezone })).getHours() : null
+      }));
+      
       console.log(`No users scheduled for this hour (${allPreferences.length} total enabled users)`);
+      console.log('User schedules:', JSON.stringify(debugInfo, null, 2));
+      
       return res.status(200).json({ 
         message: 'No users for this time', 
         time: currentTime,
-        totalEnabled: allPreferences.length 
+        totalEnabled: allPreferences.length,
+        userSchedules: debugInfo
       });
     }
     
     const userIds = usersToNotify.map(p => p.user_id);
-    console.log(`Found ${usersToNotify.length} users for hour ${currentUTCHour}`);
+    console.log(`Found ${usersToNotify.length} users to notify for hour ${currentUTCHour}:`, userIds.map(id => id.substring(0, 8)));
     
     const { data: quotes } = await supabase.from('quotes').select('quote,author').limit(1);
     const quote = quotes?.[0] || { quote: 'Daily inspiration!', author: 'Spark Quotes' };
@@ -80,7 +101,7 @@ export default async function handler(req, res) {
       .in('user_id', userIds);
     
     let sent = 0;
-    console.log(`Found ${fcmTokens?.length || 0} FCM tokens`);
+    console.log(`Found ${fcmTokens?.length || 0} FCM tokens for users:`, userIds.map(id => id.substring(0, 8)));
     
     if (fcmTokens && fcmTokens.length > 0 && FIREBASE_SERVICE_ACCOUNT) {
       const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
