@@ -513,8 +513,8 @@ export default function Settings() {
                     
                     await registration.showNotification('✨ Your Daily Quote', {
                       body: `"${testQuote.quote}" — ${testQuote.author}`,
-                      icon: '/icons/icon-512.png',
-                      badge: '/icons/maskable-192.png',
+                      icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
+                      badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
                       tag: 'test-notification',
                       requireInteraction: false,
                       vibrate: [200, 100, 200],
