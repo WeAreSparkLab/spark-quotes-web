@@ -148,21 +148,32 @@ useEffect(() => {
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
           <style dangerouslySetInnerHTML={{
             __html: `
-              html, body, #root {
+              html, body {
                 margin: 0;
                 padding: 0;
                 overflow: hidden;
+                height: 100vh;
+                width: 100vw;
+                position: fixed;
+              }
+              #root, [data-expo-root], [data-reactroot] {
                 height: 100%;
                 width: 100%;
+                overflow: hidden;
               }
               /* Hide scrollbar for Chrome, Safari and Opera */
-              *::-webkit-scrollbar {
+              ::-webkit-scrollbar {
                 display: none;
+                width: 0;
+                height: 0;
               }
               /* Hide scrollbar for IE, Edge and Firefox */
               * {
-                -ms-overflow-style: none;  /* IE and Edge */
-                scrollbar-width: none;  /* Firefox */
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+              }
+              body {
+                overscroll-behavior: none;
               }
             `
           }} />
