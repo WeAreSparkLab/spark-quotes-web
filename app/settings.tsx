@@ -484,6 +484,30 @@ export default function Settings() {
               thumbColor={"#FFFFFF"}
             />
           </View>
+          
+          {/* Test Notification Button */}
+          {notificationsEnabled && Platform.OS === 'web' && (
+            <TouchableOpacity
+              style={[styles.testButton, { marginTop: 15 }]}
+              onPress={async () => {
+                try {
+                  const response = await fetch('/api/send-notifications?secret=sparkquotes-cron-2025', {
+                    method: 'POST'
+                  });
+                  const result = await response.json();
+                  Alert.alert(
+                    'Test Notification',
+                    result.message || 'Check your browser for the notification!',
+                    [{ text: 'OK' }]
+                  );
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to send test notification');
+                }
+              }}
+            >
+              <Text style={styles.testButtonText}>🔔 Send Test Notification Now</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Daily Frequency */}
@@ -834,6 +858,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   logoutButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
+
+  testButton: {
+    backgroundColor: "#4CAF50",
+    borderRadius: 10,
+    padding: 12,
+    alignItems: "center",
+  },
+  testButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
 
   linkButton: {
     backgroundColor: "rgba(255,255,255,0.06)",
