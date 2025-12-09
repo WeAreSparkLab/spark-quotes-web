@@ -262,8 +262,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: Platform.OS === "web" ? 16 : 0,
     paddingTop: 6,
-    paddingBottom: Platform.OS === "web" ? 20 : 10,
-    justifyContent: Platform.OS === "web" ? "center" : "flex-start",
+    paddingBottom: 10,
   },
   sceneTitle: {
     ...AppStyles.title,

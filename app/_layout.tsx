@@ -118,9 +118,7 @@ useEffect(() => {
       <StatusBar style="light" />
       <SupabaseContext.Provider value={{ supabaseInitialized, session, userId }}>
         <Head>
-          <title>Spark Quotes — Your Daily Boost</title>
-          <link rel="manifest" href="/manifest.webmanifest" />
-          <link rel="stylesheet" href="/global.css" />
+          <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
           <meta name="theme-color" content="#0E0F1D" />
           <meta name="description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
           <meta property="og:title" content="Spark Quotes — Your Daily Boost" />
@@ -148,6 +146,26 @@ useEffect(() => {
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+          <style dangerouslySetInnerHTML={{
+            __html: `
+              html, body, #root {
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                height: 100%;
+                width: 100%;
+              }
+              /* Hide scrollbar for Chrome, Safari and Opera */
+              *::-webkit-scrollbar {
+                display: none;
+              }
+              /* Hide scrollbar for IE, Edge and Firefox */
+              * {
+                -ms-overflow-style: none;  /* IE and Edge */
+                scrollbar-width: none;  /* Firefox */
+              }
+            `
+          }} />
         </Head>
         <Stack
           screenOptions={{
