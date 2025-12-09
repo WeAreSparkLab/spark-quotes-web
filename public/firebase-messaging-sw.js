@@ -18,8 +18,8 @@ messaging.onBackgroundMessage((payload) => {
   const notificationTitle = payload.notification?.title || 'Spark Quotes';
   const notificationOptions = {
     body: payload.notification?.body || 'Your daily inspiration',
-    icon: payload.notification?.icon || '/icons/icon-192.png',
-    badge: '/icons/icon-192.png',
+    icon: payload.notification?.icon || '/icons/icon-512.png',
+    badge: '/icons/maskable-192.png',
     tag: 'spark-quotes-daily',
     requireInteraction: false,
     vibrate: [200, 100, 200],
@@ -27,6 +27,7 @@ messaging.onBackgroundMessage((payload) => {
       url: payload.data?.url || '/',
       dateOfArrival: Date.now()
     },
+    image: '/icons/icon-512.png',
     actions: [
       {
         action: 'open',
