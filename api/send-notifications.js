@@ -6,10 +6,13 @@ const CRON_SECRET = process.env.CRON_SECRET;
 const FIREBASE_SERVICE_ACCOUNT = process.env.FIREBASE_SERVICE_ACCOUNT;
 
 export default async function handler(req, res) {
-  // Vercel cron sends secret as query param
+  // Vercel cron sends secret as query param OR uses authorization header
+  // Vercel's native cron also sets a special header
   const secret = req.query.secret || req.headers['authorization']?.replace('Bearer ', '');
-  if (secret !== CRON_SECRET) {
-    console.log('Unauthorized - invalid CRON_SECRET');
+  const isVercelCron = req.headers['user-agent']?.includes('vercel-cron');
+  
+  if (!isVercelCron && secret !== CRON_SECRET) {
+    console.log('Unauthorized - invalid CRON_SECRET and not Vercel cron');
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
