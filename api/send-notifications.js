@@ -107,7 +107,13 @@ export default async function handler(req, res) {
     console.log(`Found ${fcmTokens?.length || 0} FCM tokens for users:`, userIds.map(id => id.substring(0, 8)));
     
     if (fcmTokens && fcmTokens.length > 0 && FIREBASE_SERVICE_ACCOUNT) {
-      const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+      // Support base64-encoded JSON to avoid escaping issues
+      let serviceAccountJson = FIREBASE_SERVICE_ACCOUNT;
+      if (!serviceAccountJson.trim().startsWith('{')) {
+        serviceAccountJson = Buffer.from(serviceAccountJson, 'base64').toString('utf8');
+      }
+      
+      const serviceAccount = JSON.parse(serviceAccountJson);
       const accessToken = await getAccessToken(serviceAccount);
       const projectId = serviceAccount.project_id;
       
