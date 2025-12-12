@@ -110,17 +110,10 @@ export default async function handler(req, res) {
             title: '✨ Your Daily Quote is Ready',
             body: 'Tap to discover today\'s inspiration',
           },
-          android: {
-            notification: {
-              color: '#6672E7',
-              image: 'https://quotes.wearesparklab.com/icons/icon-512.png'
-            }
-          },
           webpush: {
             notification: {
               icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
               badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
-              image: 'https://quotes.wearesparklab.com/icons/icon-512.png',
               vibrate: [200, 100, 200],
               requireInteraction: false,
               data: {
