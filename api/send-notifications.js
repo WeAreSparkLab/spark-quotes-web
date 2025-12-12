@@ -128,9 +128,8 @@ export default async function handler(req, res) {
             },
             android: {
               notification: {
-                icon: 'ic_notification',
                 color: '#6672E7',
-                imageUrl: 'https://quotes.wearesparklab.com/icons/icon-192.png'
+                image: 'https://quotes.wearesparklab.com/icons/icon-512.png'
               }
             },
             webpush: {
