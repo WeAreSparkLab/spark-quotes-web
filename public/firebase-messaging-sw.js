@@ -45,25 +45,50 @@ self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event.action);
   event.notification.close();
   
+  const urlToOpen = 'https://quotes.wearesparklab.com/?source=notification';
+  
   event.waitUntil(
     clients.matchAll({ 
       type: 'window',
       includeUncontrolled: true 
     }).then((windowClients) => {
-      // Check if there's already a PWA window open
+      console.log('Found', windowClients.length, 'client windows');
+      
+      // Check if there's already a window open on our site
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        const clientUrl = new URL(client.url);
-        // Match any window on the same origin
-        if (clientUrl.origin === 'https://quotes.wearesparklab.com' && 'focus' in client) {
-          // Navigate to home and focus
-          client.navigate('/');
-          return client.focus();
+        console.log('Checking client:', client.url);
+        
+        try {
+          const clientUrl = new URL(client.url);
+          // Match any window on the same origin
+          if (clientUrl.origin === 'https://quotes.wearesparklab.com') {
+            console.log('Found matching window, focusing...');
+            // Navigate to home and focus
+            return client.focus().then(() => {
+              if (client.navigate) {
+                return client.navigate('/');
+              }
+            });
+          }
+        } catch (e) {
+          console.log('Error checking client URL:', e);
         }
       }
-      // If no window is open, open the PWA
+      
+      // If no window is open, open a new one
+      console.log('No matching window found, opening new window...');
       if (clients.openWindow) {
-        return clients.openWindow('/?source=notification');
+        return clients.openWindow(urlToOpen).then((client) => {
+          console.log('Opened new window:', client);
+          return client;
+        });
+      }
+    }).catch((error) => {
+      console.error('Error handling notification click:', error);
+      // Fallback: try to open anyway
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
       }
     })
   );
