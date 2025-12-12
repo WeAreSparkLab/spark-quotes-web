@@ -58,7 +58,12 @@ function pemToArrayBuffer(pem) {
     .replace(/-----END PRIVATE KEY-----/g, '')
     .replace(/\s/g, '');
   
+  console.log('Extracted base64 length:', base64.length);
+  console.log('Base64 first 50 chars:', base64.substring(0, 50));
+  console.log('Base64 last 50 chars:', base64.substring(base64.length - 50));
+  
   const binary = Buffer.from(base64, 'base64');
+  console.log('Binary buffer length:', binary.length);
   return binary.buffer;
 }
 
