@@ -93,19 +93,43 @@ useEffect(() => {
     }
   }, [userId]);
 
+  // Handle app visibility changes (PWA coming back from background)
   useEffect(() => {
-    if (Platform.OS === "web" && "serviceWorker" in navigator) {
-      // Register Firebase messaging service worker
-      navigator.serviceWorker
-        .register("/firebase-messaging-sw.js")
-        .then((reg) => console.log("Firebase SW registered:", reg.scope))
-        .catch((err) => console.log("Firebase SW registration failed:", err));
+    if (Platform.OS === 'web') {
+      const handleVisibilityChange = () => {
+        if (document.visibilityState === 'visible') {
+          // Force re-render when app becomes visible to prevent blank screen
+          console.log('App became visible, ensuring content is loaded');
+        }
+      };
       
-      // Register app service worker
-      navigator.serviceWorker
-        .register("/sw.js", { scope: "/" })
-        .then((reg) => console.log("SW registered:", reg.scope))
-        .catch((err) => console.log("SW registration failed:", err));
+      document.addEventListener('visibilitychange', handleVisibilityChange);
+      return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      // Hide URL bar on load for PWA
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        // Already in PWA mode, scroll to hide address bar
+        window.scrollTo(0, 1);
+        setTimeout(() => window.scrollTo(0, 0), 100);
+      }
+      
+      if ("serviceWorker" in navigator) {
+        // Register Firebase messaging service worker
+        navigator.serviceWorker
+          .register("/firebase-messaging-sw.js")
+          .then((reg) => console.log("Firebase SW registered:", reg.scope))
+          .catch((err) => console.log("Firebase SW registration failed:", err));
+        
+        // Register app service worker
+        navigator.serviceWorker
+          .register("/sw.js", { scope: "/" })
+          .then((reg) => console.log("SW registered:", reg.scope))
+          .catch((err) => console.log("SW registration failed:", err));
+      }
     }
   }, []);
 

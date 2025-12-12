@@ -45,23 +45,25 @@ self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event.action);
   event.notification.close();
   
-  const urlToOpen = new URL('https://quotes.wearesparklab.com/');
-  
   event.waitUntil(
     clients.matchAll({ 
       type: 'window',
       includeUncontrolled: true 
     }).then((windowClients) => {
-      // Check if there's already a window/tab open
+      // Check if there's already a PWA window open
       for (let i = 0; i < windowClients.length; i++) {
         const client = windowClients[i];
-        if (client.url === urlToOpen.href && 'focus' in client) {
+        const clientUrl = new URL(client.url);
+        // Match any window on the same origin
+        if (clientUrl.origin === 'https://quotes.wearesparklab.com' && 'focus' in client) {
+          // Navigate to home and focus
+          client.navigate('/');
           return client.focus();
         }
       }
-      // If not, open a new window
+      // If no window is open, open the PWA
       if (clients.openWindow) {
-        return clients.openWindow(urlToOpen.href);
+        return clients.openWindow('/?source=notification');
       }
     })
   );
