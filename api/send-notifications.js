@@ -1,4 +1,5 @@
 ﻿import { createClient } from '@supabase/supabase-js';
+import crypto from 'crypto';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -193,24 +194,13 @@ async function getAccessToken(serviceAccount) {
     const jwtClaimSetEncoded = Buffer.from(JSON.stringify(jwtClaimSet)).toString('base64url');
     const signatureInput = `${jwtHeader}.${jwtClaimSetEncoded}`;
     
-    const privateKeyBuffer = pemToArrayBuffer(serviceAccount.private_key);
-    console.log('Private key buffer length:', privateKeyBuffer.byteLength);
+    // Use Node's native crypto for better compatibility
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(signatureInput);
+    sign.end();
+    const signature = sign.sign(serviceAccount.private_key);
     
-    const privateKey = await crypto.subtle.importKey(
-      'pkcs8',
-      privateKeyBuffer,
-      { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
-      false,
-      ['sign']
-    );
-    
-    const signature = await crypto.subtle.sign(
-      'RSASSA-PKCS1-v1_5',
-      privateKey,
-      new TextEncoder().encode(signatureInput)
-    );
-    
-    const signatureEncoded = Buffer.from(signature).toString('base64url');
+    const signatureEncoded = signature.toString('base64url');
     const jwt = `${signatureInput}.${signatureEncoded}`;
     
     const response = await fetch('https://oauth2.googleapis.com/token', {
