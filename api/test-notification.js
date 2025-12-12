@@ -18,6 +18,12 @@ async function getAccessToken(serviceAccount) {
   const jwtClaimSetEncoded = Buffer.from(JSON.stringify(jwtClaimSet)).toString('base64url');
   const signatureInput = `${jwtHeader}.${jwtClaimSetEncoded}`;
   
+  // Debug: Check the private key format
+  console.log('Private key length:', serviceAccount.private_key?.length);
+  console.log('Private key starts with:', serviceAccount.private_key?.substring(0, 50));
+  console.log('Contains \\n:', serviceAccount.private_key?.includes('\\n'));
+  console.log('Contains actual newline:', serviceAccount.private_key?.includes('\n'));
+  
   const privateKeyBuffer = pemToArrayBuffer(serviceAccount.private_key);
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
