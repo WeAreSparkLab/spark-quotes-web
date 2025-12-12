@@ -92,7 +92,13 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Firebase service account not configured' });
     }
     
-    const serviceAccount = JSON.parse(FIREBASE_SERVICE_ACCOUNT);
+    // Support base64-encoded JSON to avoid escaping issues
+    let serviceAccountJson = FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountJson.trim().startsWith('{')) {
+      serviceAccountJson = Buffer.from(serviceAccountJson, 'base64').toString('utf8');
+    }
+    
+    const serviceAccount = JSON.parse(serviceAccountJson);
     const accessToken = await getAccessToken(serviceAccount);
     const projectId = serviceAccount.project_id;
     
