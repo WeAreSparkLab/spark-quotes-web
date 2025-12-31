@@ -99,10 +99,22 @@ export default async function handler(req, res) {
     const { data: quotes } = await supabase.from('quotes').select('quote,author').limit(1);
     const quote = quotes?.[0] || { quote: 'Daily inspiration!', author: 'Spark Quotes' };
     
-    const { data: fcmTokens } = await supabase
+    // Get FCM tokens - deduplicate by user_id to send only one notification per user
+    const { data: allTokens } = await supabase
       .from('fcm_tokens')
-      .select('token')
-      .in('user_id', userIds);
+      .select('user_id, token, updated_at')
+      .in('user_id', userIds)
+      .order('updated_at', { ascending: false });
+    
+    // Keep only the most recent token per user to avoid duplicates
+    const fcmTokens = [];
+    const seenUsers = new Set();
+    for (const tokenData of allTokens || []) {
+      if (!seenUsers.has(tokenData.user_id)) {
+        fcmTokens.push({ token: tokenData.token });
+        seenUsers.add(tokenData.user_id);
+      }
+    }
     
     let sent = 0;
     console.log(`Found ${fcmTokens?.length || 0} FCM tokens for users:`, userIds.map(id => id.substring(0, 8)));
