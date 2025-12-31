@@ -116,6 +116,8 @@ export default async function handler(req, res) {
       }
     }
     
+    console.log(`Deduplicated: ${allTokens?.length || 0} tokens down to ${fcmTokens.length} (one per user)`);
+    
     let sent = 0;
     console.log(`Found ${fcmTokens?.length || 0} FCM tokens for users:`, userIds.map(id => id.substring(0, 8)));
     
