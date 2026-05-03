@@ -13,6 +13,7 @@ import { ensureProfile } from '../utils/ensureProfile';
 import SupportUsBar from "../components/SupportUsBar";
 import { usePathname } from "expo-router";
 import { subscribeFCM, listenForMessages } from '../lib/fcmHelper';
+import { Analytics } from '@vercel/analytics/react';
 
 // Define the shape of your Supabase context
 interface SupabaseContextType {
@@ -220,6 +221,7 @@ useEffect(() => {
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
         </Stack>
+        <Analytics />
       </SupabaseContext.Provider>
     </SafeAreaProvider>
   );
