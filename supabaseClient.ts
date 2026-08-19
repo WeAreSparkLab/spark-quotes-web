@@ -6,16 +6,15 @@ import { createClient } from '@supabase/supabase-js';
 
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://nmzjdcwjqutqdgqkmesy.supabase.co';
 
-// Browser-side key. Both of these are public by design — they are compiled
-// into the client bundle either way — so neither is a secret.
+// Browser-side publishable key. Public by design — it is compiled into the
+// client bundle either way — so it is not a secret and is safe to default to.
 //
-// Prefer the new publishable key (sb_publishable_...). The legacy anon JWT is
-// only a fallback so the app keeps working until the env var is set; it stops
-// working once legacy JWT-based keys are switched off in the dashboard.
-const LEGACY_ANON =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5tempkY3dqcXV0cWRncWttZXN5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTAzNjA3MjcsImV4cCI6MjA2NTkzNjcyN30.GC7ZoP4oAKjkJ_Vg0baiZhnW4V2mwnwbaAQw1KGzNDA';
+// The old anon JWT is deliberately NOT kept as a fallback: legacy JWT-based
+// keys are disabled on this project, so falling back to one would fail with
+// "legacy API keys are disabled" rather than failing obviously.
+const PUBLISHABLE_KEY = 'sb_publishable_63wactDAvFIMgCvsQi4_1w_GxGSNGwR';
 
-const anon = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || LEGACY_ANON;
+const anon = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || PUBLISHABLE_KEY;
 
 // Detect RN vs web/SSR
 const isReactNative =
