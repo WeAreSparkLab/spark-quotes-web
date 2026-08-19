@@ -105,8 +105,49 @@ async function getAndStoreToken(userId: string): Promise<string | null> {
  */
 export async function subscribeFCMIfPermitted(userId: string): Promise<boolean> {
   if (notificationPermission() !== 'granted') return false;
+
   const token = await getAndStoreToken(userId);
-  return !!token;
+  if (!token) return false;
+
+  // Backfill preferences for anyone who granted permission before this row
+  // was being created — without it they hold a token the cron never reads.
+  await ensureNotificationPreferences(userId);
+  return true;
+}
+
+/**
+ * Make sure the user has a notification_preferences row.
+ *
+ * The send-notifications cron iterates notification_preferences, NOT
+ * fcm_tokens — so a stored token with no preferences row receives nothing.
+ * Settings creates this row when you save there, but enabling from the
+ * prompt has to create it too.
+ *
+ * ignoreDuplicates means an existing row (and whatever times the user has
+ * already chosen) is left untouched.
+ */
+async function ensureNotificationPreferences(userId: string): Promise<void> {
+  let timezone = 'UTC';
+  try {
+    timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    /* keep UTC */
+  }
+
+  const { error } = await supabase
+    .from('notification_preferences')
+    .upsert(
+      {
+        user_id: userId,
+        enabled: true,
+        times: ['09:00'], // the prompt promises one a day
+        timezone,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id', ignoreDuplicates: true }
+    );
+
+  if (error) console.error('Could not create notification preferences:', error);
 }
 
 /**
@@ -116,10 +157,18 @@ export async function subscribeFCMIfPermitted(userId: string): Promise<boolean> 
 export async function requestAndSubscribeFCM(userId: string): Promise<boolean> {
   if (typeof Notification === 'undefined') return false;
   try {
-    const permission = await Notification.requestPermission();
+    const permission = await withTimeout(
+      Notification.requestPermission(),
+      60000,
+      'Permission prompt'
+    );
     if (permission !== 'granted') return false;
+
     const token = await getAndStoreToken(userId);
-    return !!token;
+    if (!token) return false;
+
+    await ensureNotificationPreferences(userId);
+    return true;
   } catch (error) {
     console.error('Error requesting notification permission:', error);
     return false;
