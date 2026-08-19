@@ -169,6 +169,7 @@ useEffect(() => {
           <meta property="og:image:height" content="630" />
           <meta property="og:image:alt" content="Spark Quotes — one uplifting quote, every single day." />
           <meta property="og:url" content="https://quotes.wearesparklab.com/" />
+          <meta property="fb:app_id" content="25675478425462421" />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content="Spark Quotes — Your Daily Boost" />
           <meta name="twitter:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
