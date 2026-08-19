@@ -100,5 +100,13 @@ window.gtag=gtag;gtag('js',new Date());gtag('config','${googleId}');`);
   );
 }
 
-stampServiceWorker();
-injectPixels();
+// ---------------------------------------------------------------------------
+// 3. Crawlable pages for every quote (and the sitemap covering them).
+// ---------------------------------------------------------------------------
+const { generate: generateSeoPages } = require('./seo-pages.cjs');
+
+(async () => {
+  stampServiceWorker();
+  injectPixels();
+  await generateSeoPages();
+})();
