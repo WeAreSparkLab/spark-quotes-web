@@ -159,6 +159,9 @@ useEffect(() => {
         <Head>
           <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
           <meta name="theme-color" content="#0E0F1D" />
+          {/* Google Search Console ownership verification — must stay in the
+              served HTML or the property silently loses verification. */}
+          <meta name="google-site-verification" content="621BkybwhnFbLzAG7YjO-oewxOlO7idlFUjP_c7M_Us" />
           <meta name="description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
           <meta property="og:title" content="Spark Quotes — Your Daily Boost" />
           <meta property="og:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
