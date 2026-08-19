@@ -133,12 +133,12 @@ useEffect(() => {
       }
       
       if ("serviceWorker" in navigator) {
-        // Register Firebase messaging service worker
-        navigator.serviceWorker
-          .register("/firebase-messaging-sw.js")
-          .then((reg) => console.log("Firebase SW registered:", reg.scope))
-          .catch((err) => console.log("Firebase SW registration failed:", err));
-        
+        // NOTE: the Firebase messaging worker is deliberately NOT registered
+        // here. It used to be registered at scope "/", which collided with
+        // /sw.js below — the later registration replaced it and left
+        // getToken() hanging. fcmHelper now registers it lazily under its own
+        // scope, only when a user actually enables notifications.
+
         // Register app service worker
         navigator.serviceWorker
           .register("/sw.js", { scope: "/" })

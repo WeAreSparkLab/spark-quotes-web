@@ -15,9 +15,63 @@ export function canAskForNotifications(): boolean {
   return notificationPermission() === 'default';
 }
 
+/**
+ * Dedicated scope for the FCM worker.
+ *
+ * The app's own /sw.js claims scope "/". A second registration at the same
+ * scope replaces the first, which used to evict the messaging worker and
+ * leave getToken() hanging forever. Giving FCM its own scope lets both live
+ * side by side, and we hand the registration to getToken explicitly rather
+ * than relying on it to find one.
+ */
+const FCM_SCOPE = '/firebase-cloud-messaging-push-scope';
+
+async function getFcmRegistration(): Promise<ServiceWorkerRegistration | undefined> {
+  if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return undefined;
+
+  // getRegistration() matches by URL prefix, so with /sw.js controlling "/"
+  // it happily returns THAT worker for this scope. Confirm we actually got
+  // the messaging worker before reusing it.
+  const existing = await navigator.serviceWorker.getRegistration(FCM_SCOPE);
+  const isMessagingWorker =
+    !!existing &&
+    [existing.active, existing.waiting, existing.installing].some((w) =>
+      w?.scriptURL.includes('firebase-messaging-sw.js')
+    );
+
+  if (existing && isMessagingWorker) return existing;
+
+  return navigator.serviceWorker.register('/firebase-messaging-sw.js', { scope: FCM_SCOPE });
+}
+
+/** Reject rather than hang forever, so the UI can always recover. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 async function getAndStoreToken(userId: string): Promise<string | null> {
   try {
-    const token = await getToken(messaging, { vapidKey: VAPID_KEY });
+    if (!messaging) {
+      console.warn('Firebase messaging unavailable in this browser');
+      return null;
+    }
+
+    const serviceWorkerRegistration = await withTimeout(
+      getFcmRegistration(),
+      10000,
+      'Service worker registration'
+    );
+
+    const token = await withTimeout(
+      getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration }),
+      15000,
+      'getToken'
+    );
     if (!token) {
       console.warn('No FCM token returned');
       return null;
