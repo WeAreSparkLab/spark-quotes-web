@@ -10,7 +10,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Platform, View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "./common/Ionicons";
-import { canAskForNotifications, requestAndSubscribeFCM } from "../lib/fcmHelper";
+import { canAskForNotifications, notificationPermission, requestAndSubscribeFCM } from "../lib/fcmHelper";
 import { trackEvent } from "../utils/analytics";
 
 const DISMISSED_KEY = "notificationPromptDismissed";
@@ -18,6 +18,7 @@ const DISMISSED_KEY = "notificationPromptDismissed";
 export default function NotificationPrompt({ userId }: { userId: string | null }) {
   const [visible, setVisible] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -43,15 +44,30 @@ export default function NotificationPrompt({ userId }: { userId: string | null }
   const enable = useCallback(async () => {
     if (!userId || busy) return;
     setBusy(true);
+    setError(null);
     try {
       // Called straight from the tap so the browser still counts it as a
       // user gesture.
       const granted = await requestAndSubscribeFCM(userId);
       trackEvent(granted ? "Notifications Enabled" : "Notifications Declined");
-    } finally {
-      setBusy(false);
+
+      if (!granted) {
+        // Either the user said no, or registration failed. Say so instead of
+        // silently closing, and leave the card up so they can retry.
+        setError(
+          notificationPermission() === "denied"
+            ? "Notifications are blocked for this site. You can re-allow them in your browser settings."
+            : "Couldn't turn notifications on. Please try again."
+        );
+        return;
+      }
+
       setVisible(false);
       try { await AsyncStorage.setItem(DISMISSED_KEY, "1"); } catch {}
+    } catch {
+      setError("Couldn't turn notifications on. Please try again.");
+    } finally {
+      setBusy(false);
     }
   }, [userId, busy]);
 
@@ -68,6 +84,8 @@ export default function NotificationPrompt({ userId }: { userId: string | null }
         We'll send one uplifting quote a day. No spam, and you can turn it off
         any time in Settings.
       </Text>
+
+      {error ? <Text style={styles.error}>{error}</Text> : null}
 
       <View style={styles.actions}>
         <TouchableOpacity
@@ -106,6 +124,7 @@ const styles = StyleSheet.create({
   headingRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   heading: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
   body: { color: "#BFC4D6", fontSize: 13, lineHeight: 19, marginTop: 8 },
+  error: { color: "#FFB3B8", fontSize: 13, lineHeight: 19, marginTop: 10 },
   actions: {
     flexDirection: "row",
     justifyContent: "flex-end",
