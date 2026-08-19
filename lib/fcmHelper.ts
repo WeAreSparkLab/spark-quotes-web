@@ -186,7 +186,7 @@ export function listenForMessages() {
       body: payload.notification.body,
       icon: payload.notification.icon || '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
-      tag: 'spark-quotes-notification',
+      tag: 'spark-quotes-daily', // must match the server payload tag
       requireInteraction: false,
     });
   });

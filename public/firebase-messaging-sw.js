@@ -12,32 +12,14 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+// NOTE: deliberately no showNotification() here.
+//
+// Our messages carry a `notification` payload, which the browser displays
+// automatically. Calling showNotification() as well produced TWO notifications
+// for every message. Styling (icon, badge, vibrate) comes from the webpush
+// block the server sends, and clicks are handled below.
 messaging.onBackgroundMessage((payload) => {
   console.log('Background message received:', payload);
-  
-  const notificationTitle = payload.notification?.title || '✨ Your Daily Quote is Ready';
-  const notificationOptions = {
-    body: payload.notification?.body || 'Tap to discover today\'s inspiration',
-    icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
-    badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
-    tag: 'spark-quotes-daily',
-    requireInteraction: false,
-    vibrate: [200, 100, 200],
-    data: {
-      url: payload.data?.url || 'https://quotes.wearesparklab.com/',
-      dateOfArrival: Date.now(),
-      action: 'open-app'
-    },
-    actions: [
-      {
-        action: 'open',
-        title: 'Read Quote',
-        icon: 'https://quotes.wearesparklab.com/icons/icon-192.png'
-      }
-    ]
-  };
-
-  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
 // Handle notification clicks
