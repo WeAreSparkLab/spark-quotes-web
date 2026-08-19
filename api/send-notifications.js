@@ -96,8 +96,26 @@ export default async function handler(req, res) {
     const userIds = usersToNotify.map(p => p.user_id);
     console.log(`Found ${usersToNotify.length} users to notify for hour ${currentUTCHour}:`, userIds.map(id => id.substring(0, 8)));
     
-    const { data: quotes } = await supabase.from('quotes').select('quote,author').limit(1);
-    const quote = quotes?.[0] || { quote: 'Daily inspiration!', author: 'Spark Quotes' };
+    // Pick a real quote to put IN the notification. This previously queried a
+    // `quotes` table that does not exist, so it always fell back — and the
+    // result was never used anyway, leaving every notification identical.
+    let quote = { text: 'Open Spark Quotes for today\'s pick.', author: 'Spark Quotes' };
+
+    const { data: quoteRows, error: quoteError } = await supabase
+      .from('approved_quotes')
+      .select('text, author')
+      .limit(500);
+
+    if (quoteError) {
+      console.error('Could not load quotes, using fallback:', quoteError);
+    } else if (quoteRows && quoteRows.length > 0) {
+      quote = quoteRows[Math.floor(Math.random() * quoteRows.length)];
+    }
+
+    // Keep the body inside what a notification will actually display
+    const quoteBody = quote.text.length > 120
+      ? `${quote.text.slice(0, 119).trimEnd()}…`
+      : quote.text;
     
     // Get FCM tokens - deduplicate by user_id to send only one notification per user
     const { data: allTokens } = await supabase
@@ -137,8 +155,8 @@ export default async function handler(req, res) {
           message: {
             token,
             notification: {
-              title: '✨ Your Daily Quote is Ready',
-              body: 'Tap to discover today\'s inspiration',
+              title: `✨ ${quote.author}`,
+              body: quoteBody,
             },
             webpush: {
               notification: {
@@ -146,6 +164,9 @@ export default async function handler(req, res) {
                 badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
                 vibrate: [200, 100, 200],
                 requireInteraction: false,
+                // Shared tag: if anything ever displays this twice, the second
+                // replaces the first instead of stacking.
+                tag: 'spark-quotes-daily',
                 data: {
                   url: 'https://quotes.wearesparklab.com/',
                   action: 'open-app'
@@ -184,7 +205,7 @@ export default async function handler(req, res) {
       time: currentTime,
       users: usersToNotify.length,
       sent,
-      quote: `"${quote.quote}" — ${quote.author}`
+      quote: `"${quote.text}" — ${quote.author}`
     });
     
   } catch (error) {
