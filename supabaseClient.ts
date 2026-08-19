@@ -4,8 +4,18 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-const url = 'https://nmzjdcwjqutqdgqkmesy.supabase.co';
-const anon = 'REDACTED';
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://nmzjdcwjqutqdgqkmesy.supabase.co';
+
+// Browser-side key. Both of these are public by design — they are compiled
+// into the client bundle either way — so neither is a secret.
+//
+// Prefer the new publishable key (sb_publishable_...). The legacy anon JWT is
+// only a fallback so the app keeps working until the env var is set; it stops
+// working once legacy JWT-based keys are switched off in the dashboard.
+const LEGACY_ANON =
+  'REDACTED';
+
+const anon = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || LEGACY_ANON;
 
 // Detect RN vs web/SSR
 const isReactNative =
