@@ -1,5 +1,5 @@
 // components/screens/IndexScreen.tsx
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { supabase } from "../../supabaseClient";
-import { allCategories } from "../../data/data";
+import { allCategories, legacyCategoryMap, quotes as bundledQuotes } from "../../data/data";
 import { Ionicons } from "../common/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AppStyles from "../../styles/AppStyles";
@@ -32,6 +32,8 @@ import {
   isQuoteFavorited,
 } from "../../services/supabaseFavorites";
 import { openLink } from '../../utils/openLink';
+import { shareQuote } from '../../utils/shareQuote';
+import NotificationPrompt from '../NotificationPrompt';
 
 
 interface Quote {
@@ -41,12 +43,12 @@ interface Quote {
   category: string;
 }
 
-// Local fallback so the app never looks "broken" if network/db is empty
-const FALLBACK_QUOTES: Quote[] = [
-  { id: "f1", text: "Keep going. You’re closer than you think.", author: "Unknown", category: "Good Vibes" },
-  { id: "f2", text: "Small steps every day.", author: "Unknown", category: "Discipline" },
-  { id: "f3", text: "Progress over perfection.", author: "Unknown", category: "Mindset" },
-];
+// Offline fallback. The full quote set ships in the bundle anyway, so use it
+// rather than a handful of hardcoded lines — a user with no connection gets a
+// real quote instead of the same three on repeat.
+const FALLBACK_QUOTES: Quote[] = bundledQuotes.length > 0
+  ? bundledQuotes
+  : [{ id: "f1", text: "Keep going. You’re closer than you think.", author: "Unknown", category: "Good Vibes" }];
 
 export default function IndexScreen() {
   const router = useRouter();
@@ -55,6 +57,14 @@ export default function IndexScreen() {
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [hasReported, setHasReported] = useState(false);
+
+  // Cached pool of quotes for the current topic selection, so tapping
+  // "Another quote" doesn't re-query Supabase on every press.
+  const poolRef = useRef<Quote[]>([]);
+  const poolKeyRef = useRef<string>("");
 
   // Floating card micro animation
   const cardAnimation = useSharedValue(0);
@@ -69,6 +79,39 @@ export default function IndexScreen() {
 
   const pickFallback = () =>
     FALLBACK_QUOTES[Math.floor(Math.random() * FALLBACK_QUOTES.length)];
+
+  /**
+   * Quotes matching the user's selected topics. Cached per topic selection —
+   * the key changes when topics change, so edits on /topics take effect.
+   */
+  const fetchPool = useCallback(async (): Promise<Quote[]> => {
+    const storedTopics = await AsyncStorage.getItem("selectedTopics");
+    const selectedTopics: string[] = storedTopics ? JSON.parse(storedTopics) : allCategories;
+
+    // Migrate renamed topics and drop any that no longer exist, otherwise a
+    // stale saved selection queries for categories with no rows.
+    const normalised = selectedTopics
+      .map((t) => legacyCategoryMap[t] ?? t)
+      .filter((t) => allCategories.includes(t));
+
+    const topics = normalised.length > 0 ? normalised : allCategories;
+    const key = JSON.stringify([...topics].sort());
+
+    if (key === poolKeyRef.current && poolRef.current.length > 0) {
+      return poolRef.current;
+    }
+
+    const { data, error } = await supabase
+      .from("approved_quotes")
+      .select("id, text, author, category")
+      .in("category", topics);
+
+    if (!error && data && data.length > 0) {
+      poolRef.current = data as Quote[];
+      poolKeyRef.current = key;
+    }
+    return poolRef.current;
+  }, []);
 
   const getQuoteOfTheDay = useCallback(async () => {
     setIsLoading(true);
@@ -85,24 +128,14 @@ export default function IndexScreen() {
         }
       }
 
-      // 2) Get selected topics (or all)
-      const storedTopics = await AsyncStorage.getItem("selectedTopics");
-      const selectedTopics: string[] = storedTopics ? JSON.parse(storedTopics) : allCategories;
+      // 2) Pull the pool for the selected topics
+      const pool = await fetchPool();
 
-      // 3) Try Supabase first
-      const { data, error } = await supabase
-        .from("approved_quotes")
-        .select("id, text, author, category")
-        .in("category", selectedTopics.length > 0 ? selectedTopics : allCategories);
-
-      let newQuote: Quote | null = null;
-
-      if (!error && data && data.length > 0) {
-        newQuote = data[Math.floor(Math.random() * data.length)] as Quote;
-      } else {
-        // 4) Fallback if network/table empty
-        newQuote = pickFallback();
-      }
+      // 3) Fallback if network/table empty
+      const newQuote: Quote =
+        pool.length > 0
+          ? pool[Math.floor(Math.random() * pool.length)]
+          : pickFallback();
 
       setCurrentQuote(newQuote);
 
@@ -115,7 +148,36 @@ export default function IndexScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [fetchPool]);
+
+  // --- Browse a different quote without disturbing the saved quote of the day
+  const handleAnotherQuote = async () => {
+    if (isShuffling) return;
+    setIsShuffling(true);
+    try {
+      const pool = await fetchPool();
+      // Avoid handing back the quote already on screen
+      const candidates =
+        currentQuote && pool.length > 1
+          ? pool.filter((q) => q.id !== currentQuote.id)
+          : pool;
+
+      setCurrentQuote(
+        candidates.length > 0
+          ? candidates[Math.floor(Math.random() * candidates.length)]
+          : pickFallback()
+      );
+    } catch {
+      setCurrentQuote(pickFallback());
+    } finally {
+      setIsShuffling(false);
+    }
+  };
+
+  // A new quote is a new report target
+  useEffect(() => {
+    setHasReported(false);
+  }, [currentQuote?.id]);
 
   // Keep favorite heart state in sync when quote/user changes
   useEffect(() => {
@@ -132,8 +194,10 @@ export default function IndexScreen() {
 
   // --- Add back this: Favorite toggle handler
   const handleFavoriteToggle = async () => {
+    // Logged-out visitors still see the heart — send them somewhere useful
+    // rather than hiding the action or dead-ending them in an alert.
     if (!userId) {
-      alert("Please log in to favorite quotes!");
+      router.push("/auth");
       return;
     }
     if (!currentQuote?.id) return;
@@ -151,15 +215,27 @@ export default function IndexScreen() {
     }
   };
 
+  // --- Share the quote as a branded image (open to logged-out visitors too)
+  const handleShare = async () => {
+    if (!currentQuote || isSharing) return;
+    setIsSharing(true);
+    try {
+      await shareQuote(currentQuote);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   // --- Simple UGC “Report” action (stores a report row)
   const handleReport = async () => {
-    if (!currentQuote?.id) return;
+    if (!currentQuote?.id || hasReported) return;
     try {
       await supabase.from("quote_reports").insert({
         quote_id: currentQuote.id,
         reason: "inappropriate",
         reported_by_user_id: userId ?? null,
       });
+      setHasReported(true);
       alert("Thanks — report submitted.");
     } catch {
       alert("Could not submit report. Please try again later.");
@@ -199,7 +275,7 @@ export default function IndexScreen() {
           ) : currentQuote ? (
             <>
               <Image
-                source={require("../../assets/images/star-icon.jpg")}
+                source={require("../../assets/images/star-icon.png")}
                 style={styles.starImage}
               />
               <Animated.View style={[styles.quoteCard, cardAnimatedStyle]}>
@@ -208,20 +284,76 @@ export default function IndexScreen() {
                   <Text style={AppStyles.categoryText}>{currentQuote.category}</Text>
                 </View>
 
-                {/* Favorite (requires login) */}
-                {userId && (
-                  <TouchableOpacity onPress={handleFavoriteToggle} style={styles.favoriteButton}>
-                    <Ionicons
-                      name={isFavorited ? "heart" : "heart-outline"}
-                      size={30}
-                      color={isFavorited ? "#E74C3C" : "#9B9B9B"}
-                    />
-                  </TouchableOpacity>
-                )}
+                {/* Favorite — always visible; tapping while logged out goes to sign-in */}
+                <TouchableOpacity
+                  onPress={handleFavoriteToggle}
+                  style={styles.favoriteButton}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    !userId
+                      ? "Sign in to save this quote"
+                      : isFavorited
+                        ? "Remove from favorites"
+                        : "Save to favorites"
+                  }
+                >
+                  <Ionicons
+                    name={isFavorited ? "heart" : "heart-outline"}
+                    size={30}
+                    color={isFavorited ? "#E74C3C" : "#9B9B9B"}
+                  />
+                </TouchableOpacity>
 
                 <Text style={styles.quoteText}>"{currentQuote.text}"</Text>
                 <Text style={styles.authorText}>- {currentQuote.author}</Text>
+
+                <View style={styles.actionRow}>
+                  <TouchableOpacity
+                    onPress={handleAnotherQuote}
+                    disabled={isShuffling}
+                    style={[styles.secondaryButton, isShuffling && styles.buttonDisabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Show another quote"
+                  >
+                    <Ionicons name="shuffle" color="#FFFFFF" size={20} />
+                    <Text style={styles.secondaryButtonText}>
+                      {isShuffling ? "Finding…" : "Another quote"}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    onPress={handleShare}
+                    disabled={isSharing}
+                    style={[styles.shareButton, isSharing && styles.buttonDisabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Share this quote"
+                  >
+                    <Ionicons name="share-social" color="#FFFFFF" size={20} />
+                    <Text style={styles.shareButtonText}>
+                      {isSharing ? "Preparing…" : "Share"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  onPress={handleReport}
+                  disabled={hasReported}
+                  style={styles.reportButton}
+                  accessibilityRole="button"
+                  accessibilityLabel="Report this quote as inappropriate"
+                >
+                  <Ionicons
+                    name="flag-outline"
+                    size={13}
+                    color={hasReported ? "#6E6E7A" : "#9B9B9B"}
+                  />
+                  <Text style={styles.reportText}>
+                    {hasReported ? "Reported" : "Report"}
+                  </Text>
+                </TouchableOpacity>
               </Animated.View>
+
+              <NotificationPrompt userId={userId} />
             </>
           ) : null}
         </ScrollView>
@@ -322,13 +454,64 @@ const styles = StyleSheet.create({
     padding: 5,
     zIndex: 10,
   },
-  reportButton: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    padding: 5,
+  actionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    marginTop: 24,
+  },
+  secondaryButton: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.22)",
+  },
+  secondaryButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  shareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 22,
+    borderRadius: 12,
+    backgroundColor: "#6672E7",
+    shadowColor: "#6672E7",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  shareButtonText: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+    fontSize: 15,
+  },
+  // Sits under the action row. Kept low-contrast so it never competes with
+  // Share — the top-left slot is taken by the category badge.
+  reportButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    marginTop: 14,
+    opacity: 0.75,
   },
   reportText: {
     color: "#9B9B9B",

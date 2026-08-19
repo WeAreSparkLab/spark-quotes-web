@@ -1,7 +1,7 @@
 // components/QuoteDisplay.tsx
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useSupabase } from '../app/_layout';
 import { addFavoriteQuote, removeFavoriteQuote, isQuoteFavorited } from '../services/supabaseFavorites';
 

@@ -1,9 +1,14 @@
 {
   "name": "Spark Quotes",
   "short_name": "SparkQuotes",
+  "description": "One uplifting quote every time you open it. Pick your topics, save your favourites, and share the ones that land.",
+  "categories": ["lifestyle", "health", "productivity"],
+  "lang": "en-GB",
+  "dir": "ltr",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0E0F1D",
   "theme_color": "#6672E7",
   "icons": [
@@ -11,5 +16,21 @@
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
     { "src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
     { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home-narrow.png",
+      "sizes": "540x1080",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your quote of the day"
+    },
+    {
+      "src": "/screenshots/home-wide.png",
+      "sizes": "1280x740",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Your quote of the day"
+    }
   ]
 }

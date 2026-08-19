@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Spark Quotes — One good line, every single day</title>
+<meta name="description" content="A quote worth keeping, every day. Pick your topics, save the ones that land, and share them as a card in one tap. Free.">
+<link rel="canonical" href="https://quotes.wearesparklab.com/start">
+<meta name="theme-color" content="#0C0A1A">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" href="/favicon.ico">
+
+<meta property="og:title" content="Spark Quotes — One good line, every single day">
+<meta property="og:description" content="A quote worth keeping, every day. Pick your topics, save your favourites, share them in a tap.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://quotes.wearesparklab.com/start">
+<meta property="og:image" content="https://quotes.wearesparklab.com/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Spark Quotes">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://quotes.wearesparklab.com/og.png">
+
+<script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root {
+    --bg: #0C0A1A;
+    --brand: #6672E7;
+    --text: #FFFFFF;
+    --muted: #BFC4D6;
+    --line: rgba(255,255,255,0.14);
+  }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+  .glow {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background:
+      radial-gradient(60ch 40ch at 50% 12%, rgba(102,114,231,0.30), transparent 70%),
+      radial-gradient(50ch 34ch at 85% 92%, rgba(230,57,70,0.16), transparent 70%);
+  }
+  .wrap { position: relative; z-index: 1; max-width: 780px; margin: 0 auto; padding: 0 20px; }
+
+  header { text-align: center; padding: 64px 0 8px; }
+  .star { font-size: 40px; line-height: 1; }
+  h1 {
+    font-size: clamp(30px, 7vw, 50px);
+    line-height: 1.12;
+    margin: 18px 0 0;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+  }
+  .sub {
+    color: var(--muted);
+    font-size: clamp(16px, 2.4vw, 19px);
+    margin: 16px auto 0;
+    max-width: 34em;
+  }
+
+  .cta-row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    justify-content: center; margin: 30px 0 8px;
+  }
+  .btn {
+    display: inline-block; text-decoration: none; font-weight: 700;
+    padding: 15px 30px; border-radius: 12px; font-size: 17px;
+  }
+  .btn-primary {
+    background: var(--brand); color: #fff;
+    box-shadow: 0 6px 22px rgba(102,114,231,0.42);
+  }
+  .btn-primary:hover { background: #7b85ec; }
+  .btn-ghost { border: 1px solid var(--line); color: var(--text); }
+  .btn-ghost:hover { background: rgba(255,255,255,0.06); }
+  .fineprint { color: #8E94AD; font-size: 14px; text-align: center; margin: 6px 0 0; }
+
+  .card {
+    margin: 46px auto 0; max-width: 560px;
+    border: 1px solid var(--line); border-radius: 20px;
+    background: rgba(255,255,255,0.035);
+    padding: 34px 28px; text-align: center;
+  }
+  .badge {
+    display: inline-block; background: #e63946; color: #fff;
+    font-size: 11px; font-weight: 800; letter-spacing: 0.09em;
+    padding: 6px 14px; border-radius: 999px; text-transform: uppercase;
+  }
+  blockquote {
+    margin: 20px 0 0; font-size: clamp(19px, 3.4vw, 25px);
+    font-style: italic; font-weight: 600; line-height: 1.4;
+  }
+  .author { color: var(--muted); margin-top: 14px; font-size: 15px; }
+
+  .features { display: grid; gap: 18px; margin: 52px 0 0; }
+  @media (min-width: 620px) { .features { grid-template-columns: repeat(3, 1fr); } }
+  .feature {
+    border: 1px solid var(--line); border-radius: 16px;
+    padding: 22px 20px; background: rgba(255,255,255,0.025);
+  }
+  .feature h2 { font-size: 16px; margin: 10px 0 6px; font-weight: 700; }
+  .feature p { color: var(--muted); font-size: 14.5px; margin: 0; }
+  .ficon { font-size: 22px; line-height: 1; }
+
+  .closing { text-align: center; margin: 56px 0 0; }
+  .closing h2 { font-size: clamp(22px, 4vw, 30px); margin: 0 0 10px; letter-spacing: -0.01em; }
+
+  footer {
+    margin: 64px 0 0; padding: 26px 0 40px;
+    border-top: 1px solid var(--line); text-align: center;
+    color: #8E94AD; font-size: 14px;
+  }
+  footer a { color: var(--muted); }
+  @media (prefers-reduced-motion: no-preference) {
+    .btn { transition: background .15s ease; }
+  }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+
+<div class="wrap">
+  <header>
+    <div class="star">✨</div>
+    <h1>One good line,<br>every single day.</h1>
+    <p class="sub">
+      Spark Quotes gives you something worth keeping each day. Choose the topics
+      that matter to you, save the ones that land, and share them as a card in a tap.
+    </p>
+
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/" data-analytics="landing-open">Open Spark Quotes</a>
+      <a class="btn btn-ghost" href="/topics" data-analytics="landing-topics">Browse topics</a>
+    </div>
+    <p class="fineprint">Free to use · Works in your browser · No account needed to start</p>
+  </header>
+
+  <div class="card">
+    <span class="badge">Good Vibes</span>
+    <blockquote>&ldquo;Small steps every day still get you somewhere worth going.&rdquo;</blockquote>
+    <p class="author">— SparkLab</p>
+  </div>
+
+  <section class="features">
+    <div class="feature">
+      <div class="ficon">🎯</div>
+      <h2>Pick your topics</h2>
+      <p>27 topics, from Funny and Love to Focus and Resilience. You decide what shows up.</p>
+    </div>
+    <div class="feature">
+      <div class="ficon">🔔</div>
+      <h2>A daily nudge</h2>
+      <p>Get one quote a day at a time you choose. Entirely optional, off by default.</p>
+    </div>
+    <div class="feature">
+      <div class="ficon">💫</div>
+      <h2>Share in a tap</h2>
+      <p>Turn any quote into a card made for Instagram, WhatsApp, or wherever your people are.</p>
+    </div>
+  </section>
+
+  <section class="closing">
+    <h2>Start with today's quote</h2>
+    <p class="sub">It takes about three seconds.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="/" data-analytics="landing-open-bottom">Open Spark Quotes</a>
+    </div>
+  </section>
+
+  <footer>
+    <p>
+      Made by <strong>SparkLab</strong>, a small family business in the UK.<br>
+      <a href="/privacy">Privacy</a> · <a href="/">Open the app</a>
+    </p>
+  </footer>
+</div>
+
+<script>
+  // Attribute landing-page clicks so we can see whether this page converts.
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-analytics]');
+    if (!el) return;
+    try {
+      if (typeof window.plausible === 'function') {
+        window.plausible('Landing CTA', { props: { target: el.dataset.analytics } });
+      }
+    } catch (_) {}
+  });
+</script>
+</body>
+</html>

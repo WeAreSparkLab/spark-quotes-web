@@ -1,5 +1,7 @@
 https://quotes.wearesparklab.com/
+https://quotes.wearesparklab.com/start
 https://quotes.wearesparklab.com/topics
+https://quotes.wearesparklab.com/favorites
 https://quotes.wearesparklab.com/submitQuote
 https://quotes.wearesparklab.com/settings
 https://quotes.wearesparklab.com/privacy

@@ -9,9 +9,9 @@ import {
   StyleSheet,
 } from "react-native";
 import { useRouter, Stack } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { allCategories } from "../data/data";
+import { allCategories, legacyCategoryMap } from "../data/data";
 import AppStyles from "../styles/AppStyles";
 import Starfield from '../components/common/Starfield';
 
@@ -26,7 +26,12 @@ export default function Topics() {
       try {
         const storedTopics = await AsyncStorage.getItem("selectedTopics");
         if (storedTopics !== null) {
-          setSelectedTopics(JSON.parse(storedTopics));
+          // Migrate renamed topics and drop retired ones so the checkboxes
+          // reflect what actually exists
+          const normalised: string[] = JSON.parse(storedTopics)
+            .map((t: string) => legacyCategoryMap[t] ?? t)
+            .filter((t: string) => allCategories.includes(t));
+          setSelectedTopics(normalised.length > 0 ? normalised : allCategories);
         } else {
           setSelectedTopics(allCategories);
         }
