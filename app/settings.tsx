@@ -27,9 +27,25 @@ import { shareApp } from "../utils/shareApp";
 import { openCoffee, openTipChooser, getStripeCTA } from "../utils/support";
 import { LINKS } from "../utils/support";
 
-const frequencyOptions = ["1", "2", "3", "4", "5"];
 const dayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-const timeOptions = ["Morning", "Afternoon", "Night"];
+
+/**
+ * The slots a user can opt into. How many they pick IS the daily frequency —
+ * a separate frequency number contradicted these checkboxes (picking "1" and
+ * "Night" produced no times at all, so notifications silently never arrived).
+ *
+ * One a day at 09:00 is the default; anyone who wants more can add slots.
+ */
+const TIME_SLOTS: { label: string; time: string }[] = [
+  { label: "Morning", time: "09:00" },
+  { label: "Midday", time: "12:00" },
+  { label: "Afternoon", time: "15:00" },
+  { label: "Evening", time: "18:00" },
+  { label: "Night", time: "21:00" },
+];
+
+const timeOptions = TIME_SLOTS.map((s) => s.label);
+const DEFAULT_TIMES = ["Morning"];
 
 const PRIVACY_POLICY_URL = "https://quotes.wearesparklab.com/privacy";
 
@@ -109,7 +125,6 @@ export default function Settings() {
 
   // notifications settings
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [dailyFrequency, setDailyFrequency] = useState("1");
   const [selectedDays, setSelectedDays] = useState<string[]>(dayOptions);
   const [selectedTimes, setSelectedTimes] = useState<string[]>(["Morning"]);
   const [refreshing, setRefreshing] = useState(false);
@@ -230,8 +245,6 @@ export default function Settings() {
         if (storedEnabled !== null)
           setNotificationsEnabled(JSON.parse(storedEnabled));
 
-        const storedFrequency = await AsyncStorage.getItem("dailyFrequency");
-        if (storedFrequency !== null) setDailyFrequency(storedFrequency);
 
         const storedDays = await AsyncStorage.getItem("selectedDays");
         if (storedDays !== null) setSelectedDays(JSON.parse(storedDays));
@@ -252,30 +265,19 @@ export default function Settings() {
         "notificationsEnabled",
         JSON.stringify(notificationsEnabled)
       );
-      await AsyncStorage.setItem("dailyFrequency", dailyFrequency);
       await AsyncStorage.setItem("selectedDays", JSON.stringify(selectedDays));
       await AsyncStorage.setItem("selectedTimes", JSON.stringify(selectedTimes));
 
       // Save to Supabase for web notifications
       if (Platform.OS === 'web' && userId) {
-        // Map Morning/Afternoon/Night to specific times
-        const timeMap: { [key: string]: string } = {
-          'Morning': '09:00',
-          'Afternoon': '15:00',
-          'Night': '21:00'
-        };
-        
-        // Convert selected times to hour format based on frequency
-        const notificationTimes: string[] = [];
-        const frequency = parseInt(dailyFrequency);
-        
-        if (frequency >= 1 && selectedTimes.includes('Morning')) notificationTimes.push('09:00');
-        if (frequency >= 2 && selectedTimes.includes('Afternoon')) notificationTimes.push('15:00');
-        if (frequency >= 3 && selectedTimes.includes('Night')) notificationTimes.push('21:00');
-        
-        // Add additional times based on frequency
-        if (frequency >= 4) notificationTimes.push('12:00');
-        if (frequency >= 5) notificationTimes.push('18:00');
+        // The chosen slots ARE the schedule. Never save an empty list — that
+        // leaves notifications switched on while nothing is ever sent.
+        const chosen = selectedTimes.length > 0 ? selectedTimes : DEFAULT_TIMES;
+        const notificationTimes = TIME_SLOTS
+          .filter((slot) => chosen.includes(slot.label))
+          .map((slot) => slot.time);
+
+        if (selectedTimes.length === 0) setSelectedTimes(DEFAULT_TIMES);
         
         try {
           console.log('Saving notification preferences for userId:', userId);
@@ -486,35 +488,14 @@ export default function Settings() {
           </View>
         </View>
 
-        {/* Daily Frequency */}
+        {/* When to send — the number of slots chosen is the daily frequency */}
         <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>Daily Frequency</Text>
-          <View style={styles.optionsRow}>
-            {frequencyOptions.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.optionButton,
-                  dailyFrequency === option && styles.selectedOption,
-                ]}
-                onPress={() => setDailyFrequency(option)}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    dailyFrequency === option && styles.selectedOptionText,
-                  ]}
-                >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Time of Day */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>Time of Day</Text>
+          <Text style={styles.sectionTitle}>When to send</Text>
+          <Text style={{ color: "#BFC4D6", fontSize: 13, marginBottom: 12 }}>
+            {selectedTimes.length <= 1
+              ? "One quote a day. Add more times if you'd like extra."
+              : `${selectedTimes.length} quotes a day.`}
+          </Text>
           <View style={styles.optionsRow}>
             {timeOptions.map((option) => (
               <TouchableOpacity
