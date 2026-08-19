@@ -117,26 +117,29 @@ export default async function handler(req, res) {
       ? `${quote.text.slice(0, 119).trimEnd()}…`
       : quote.text;
     
-    // Get FCM tokens - deduplicate by user_id to send only one notification per user
+    // Send to EVERY token a user has, so all their devices get the quote.
+    //
+    // This used to keep only the most recent token per user. That did stop
+    // duplicates, but it also meant a person with a phone and a laptop got
+    // the notification on exactly one of them — whichever they happened to
+    // open last, since every app load refreshes that device's token.
+    //
+    // The real cause of duplicates is dead tokens piling up: each refresh
+    // inserts a new row and the old one is never removed. So instead of
+    // silencing devices, delete tokens FCM rejects (below) and let the
+    // shared notification tag collapse anything that slips through.
     const { data: allTokens } = await supabase
       .from('fcm_tokens')
       .select('user_id, token, updated_at')
       .in('user_id', userIds)
       .order('updated_at', { ascending: false });
-    
-    // Keep only the most recent token per user to avoid duplicates
-    const fcmTokens = [];
-    const seenUsers = new Set();
-    for (const tokenData of allTokens || []) {
-      if (!seenUsers.has(tokenData.user_id)) {
-        fcmTokens.push({ token: tokenData.token });
-        seenUsers.add(tokenData.user_id);
-      }
-    }
-    
-    console.log(`Deduplicated: ${allTokens?.length || 0} tokens down to ${fcmTokens.length} (one per user)`);
+
+    const fcmTokens = (allTokens || []).map(t => ({ token: t.token }));
+
+    console.log(`Sending to ${fcmTokens.length} token(s) across ${userIds.length} user(s)`);
     
     let sent = 0;
+    const staleTokens = [];
     console.log(`Found ${fcmTokens?.length || 0} FCM tokens for users:`, userIds.map(id => id.substring(0, 8)));
     
     if (fcmTokens && fcmTokens.length > 0 && FIREBASE_SERVICE_ACCOUNT) {
@@ -193,7 +196,32 @@ export default async function handler(req, res) {
           sent++;
           console.log(`Sent to token ${token.substring(0, 20)}...`);
         } else {
-          console.error(`Failed: ${await response.text()}`);
+          const errorText = await response.text();
+          console.error(`Failed: ${errorText}`);
+
+          // FCM tells us when a token is dead — a browser that was
+          // reinstalled, cleared, or rotated its token. Collect those and
+          // remove them so the table stops growing stale entries forever.
+          const isDeadToken =
+            response.status === 404 ||
+            errorText.includes('UNREGISTERED') ||
+            errorText.includes('INVALID_ARGUMENT');
+
+          if (isDeadToken) staleTokens.push(token);
+        }
+      }
+
+      // Prune dead tokens so tomorrow's run is cleaner
+      if (staleTokens.length > 0) {
+        const { error: pruneError } = await supabase
+          .from('fcm_tokens')
+          .delete()
+          .in('token', staleTokens);
+
+        if (pruneError) {
+          console.error('Could not prune stale tokens:', pruneError);
+        } else {
+          console.log(`Pruned ${staleTokens.length} dead token(s)`);
         }
       }
     } else if (!FIREBASE_SERVICE_ACCOUNT) {
