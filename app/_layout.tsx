@@ -12,7 +12,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ensureProfile } from '../utils/ensureProfile';
 import SupportUsBar from "../components/SupportUsBar";
 import { usePathname } from "expo-router";
-import { subscribeFCM, listenForMessages } from '../lib/fcmHelper';
+import { subscribeFCMIfPermitted, listenForMessages } from '../lib/fcmHelper';
+import { pixelBootstrapScript } from '../utils/analytics';
 
 // Define the shape of your Supabase context
 interface SupabaseContextType {
@@ -45,9 +46,20 @@ export default function RootLayout() {
 
   const pathname = usePathname();
   const showSupport = !pathname?.startsWith("/settings");
+  const pixelScript = pixelBootstrapScript();
 
 useEffect(() => {
   let mounted = true;
+
+  // Never let a slow/unreachable Supabase trap the user on the loading
+  // spinner. The app renders fine logged-out, and the quote fetch has its
+  // own fallback, so after 3s we show the app regardless.
+  const initTimeout = setTimeout(() => {
+    if (mounted) {
+      console.log('[Layout] getSession timed out — rendering app anyway');
+      setSupabaseInitialized(true);
+    }
+  }, 3000);
 
   (async () => {
     try {
@@ -70,6 +82,7 @@ useEffect(() => {
       console.log('getSession error:', e);
     } finally {
       // 3) IMPORTANT: mark initialized
+      clearTimeout(initTimeout);
       if (mounted) setSupabaseInitialized(true);
       console.log('[Layout] setSupabaseInitialized(true)');
     }
@@ -82,13 +95,15 @@ useEffect(() => {
       if (session?.user?.id) ensureProfile(session.user.id).catch(() => {});
   });
 
-  return () => { mounted = false; subscription?.unsubscribe(); };
+  return () => { mounted = false; clearTimeout(initTimeout); subscription?.unsubscribe(); };
 }, []);
 
-  // Initialize FCM for web
+  // Initialize FCM for web. This only refreshes the token for users who have
+  // ALREADY granted permission — the request itself is behind an explicit tap
+  // in NotificationPrompt, so we never fire the browser dialog unprompted.
   useEffect(() => {
     if (Platform.OS === 'web' && userId) {
-      subscribeFCM(userId).catch(err => console.log('FCM subscription error:', err));
+      subscribeFCMIfPermitted(userId).catch(err => console.log('FCM subscription error:', err));
       listenForMessages();
     }
   }, [userId]);
@@ -148,8 +163,16 @@ useEffect(() => {
           <meta property="og:title" content="Spark Quotes — Your Daily Boost" />
           <meta property="og:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
           <meta property="og:type" content="website" />
+          <meta property="og:site_name" content="Spark Quotes" />
           <meta property="og:image" content="https://quotes.wearesparklab.com/og.png" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta property="og:image:alt" content="Spark Quotes — one uplifting quote, every single day." />
           <meta property="og:url" content="https://quotes.wearesparklab.com/" />
+          <meta name="twitter:card" content="summary_large_image" />
+          <meta name="twitter:title" content="Spark Quotes — Your Daily Boost" />
+          <meta name="twitter:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
+          <meta name="twitter:image" content="https://quotes.wearesparklab.com/og.png" />
           <link rel="canonical" href="https://quotes.wearesparklab.com/" />
           <script type="application/ld+json" dangerouslySetInnerHTML={{
             __html: JSON.stringify({
@@ -166,6 +189,10 @@ useEffect(() => {
             })
           }} />
           <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
+          {/* Ad pixels — inert unless EXPO_PUBLIC_META_PIXEL_ID / _GOOGLE_TAG_ID are set */}
+          {pixelScript ? (
+            <script dangerouslySetInnerHTML={{ __html: pixelScript }} />
+          ) : null}
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
@@ -220,6 +247,7 @@ useEffect(() => {
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
         </Stack>
+        {Platform.OS === "web" && showSupport ? <SupportUsBar /> : null}
       </SupabaseContext.Provider>
     </SafeAreaProvider>
   );

@@ -1,7 +1,7 @@
 // components/common/Ionicons.tsx
 import React from 'react';
 // Import the actual Ionicons component from @expo/vector-icons
-import { Ionicons as ExpoIonicons } from '@expo/vector-icons'; 
+import ExpoIonicons from '@expo/vector-icons/Ionicons'; 
 import { Text } from 'react-native'; 
 
 interface IoniconsProps {

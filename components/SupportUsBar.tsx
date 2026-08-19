@@ -1,65 +1,134 @@
 // components/SupportUsBar.tsx
-import React, { useEffect, useState, useCallback } from "react";
-import { Platform, View, Pressable, Text, StyleSheet, Linking, TouchableOpacity } from "react-native";
-import * as WebBrowser from "expo-web-browser";
+//
+// Floating "support us" bar for web.
+//
+// Deliberately NOT shown to new visitors: asking a stranger for money in
+// their first few seconds costs more in bounce than it earns in tips. It
+// appears from the third visit, once someone has actually got value out of
+// the app, and stays dismissed for a month if they close it.
+
+import React, { useCallback, useEffect, useState } from "react";
+import { Platform, View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { usePathname } from "expo-router";
+import { LINKS, openCoffee, openTipChooser } from "../utils/support";
 
-
-const BMC_URL = process.env.EXPO_PUBLIC_BMC_URL!;
-const TIP_5 = process.env.EXPO_PUBLIC_TIP_5!;
-const TIP_10 = process.env.EXPO_PUBLIC_TIP_10!;
-
-async function openExternal(url: string) {
-  try {
-    if (Platform.OS === "web") { window.open(url, "_blank"); return; }
-    const res = await WebBrowser.openBrowserAsync(url, { showTitle: true, enableBarCollapsing: true });
-    if (res.type === "dismiss" || res.type === "cancel") await Linking.openURL(url);
-  } catch { await Linking.openURL(url); }
-}
-
+const VISITS_KEY = "supportBarVisits";
+const DISMISSED_UNTIL_KEY = "supportBarDismissedUntil";
+const MIN_VISITS = 3;
+const SNOOZE_DAYS = 30;
 
 export default function SupportUsBar() {
-  const [hide, setHide] = useState(false);
+  const [visible, setVisible] = useState(false);
   const pathname = usePathname();
-  const onCoffee = useCallback(() => openExternal(BMC_URL), []);
-  const onTip5 = useCallback(() => openExternal(TIP_5), []);
-  const onTip10 = useCallback(() => openExternal(TIP_10), []);
 
   useEffect(() => {
     if (Platform.OS !== "web" || typeof window === "undefined") return;
 
-    const standalone =
-      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) ||
-      // @ts-ignore iOS Safari
-      (typeof navigator !== "undefined" && (navigator as any).standalone === true);
-    setHide(standalone);
+    // Nothing to ask for if no payment links are configured
+    if (!LINKS.BMC_URL && !LINKS.TIP_ANY && !LINKS.TIP_5 && !LINKS.TIP_10) return;
+
+    try {
+      const dismissedUntil = Number(localStorage.getItem(DISMISSED_UNTIL_KEY) || 0);
+      if (dismissedUntil > Date.now()) return;
+
+      // Count this visit once per session
+      if (!sessionStorage.getItem("supportBarCounted")) {
+        const next = Number(localStorage.getItem(VISITS_KEY) || 0) + 1;
+        localStorage.setItem(VISITS_KEY, String(next));
+        sessionStorage.setItem("supportBarCounted", "1");
+      }
+
+      const visits = Number(localStorage.getItem(VISITS_KEY) || 0);
+      if (visits >= MIN_VISITS) setVisible(true);
+    } catch {
+      // Private mode / storage disabled — stay quiet rather than nagging
+    }
   }, []);
 
-  if (Platform.OS !== "web" || hide) return null;
-  // Lift the bar above the bottom nav on the home route
-  const bottomOffset = pathname === "/" ? 76 : 12;
+  const dismiss = useCallback(() => {
+    setVisible(false);
+    try {
+      localStorage.setItem(
+        DISMISSED_UNTIL_KEY,
+        String(Date.now() + SNOOZE_DAYS * 24 * 60 * 60 * 1000)
+      );
+    } catch {}
+  }, []);
 
+  if (Platform.OS !== "web" || !visible) return null;
+  if (pathname?.startsWith("/settings")) return null; // Settings already has a support section
+
+  // Lift above the bottom nav on the home route
+  const bottom = pathname === "/" ? 76 : 12;
 
   return (
-    <View style={styles.wrap}>
-      <View style={[styles.wrap, { bottom: bottomOffset }]}>
+    <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
+      <View style={styles.bar}>
         <Text style={styles.text}>Enjoying Spark Quotes?</Text>
-        <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={onCoffee} style={styles.ctaPrimary}><Text style={styles.ctaPrimaryText}>Buy me a coffee</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onTip5} style={styles.ctaSecondary}><Text style={styles.ctaSecondaryText}>Tip £5</Text></TouchableOpacity>
-        <TouchableOpacity onPress={onTip10} style={styles.ctaSecondary}><Text style={styles.ctaSecondaryText}>Tip £10</Text></TouchableOpacity>
+        <View style={{ flex: 1, minWidth: 8 }} />
+
+        {!!LINKS.BMC_URL && (
+          <TouchableOpacity onPress={openCoffee} style={styles.ctaPrimary}>
+            <Text style={styles.ctaPrimaryText}>Buy us a coffee ☕</Text>
+          </TouchableOpacity>
+        )}
+
+        {(!!LINKS.TIP_ANY || !!LINKS.TIP_5 || !!LINKS.TIP_10) && (
+          <TouchableOpacity onPress={openTipChooser} style={styles.ctaSecondary}>
+            <Text style={styles.ctaSecondaryText}>Tip</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          onPress={dismiss}
+          style={styles.close}
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss support bar"
+        >
+          <Text style={styles.closeText}>✕</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: "absolute", left: 12, right: 12, bottom: 12, alignItems: "center" },
-  bar: { width: "100%", maxWidth: 980, backgroundColor: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.12)", borderWidth: 1, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, flexDirection: "row", alignItems: "center", gap: 8 },
-  text: { color: "#C9CCE3" },
-  ctaPrimary: { backgroundColor: "#FFDD00", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10 },
+  wrap: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    alignItems: "center",
+    zIndex: 20,
+  },
+  bar: {
+    width: "100%",
+    maxWidth: 980,
+    backgroundColor: "rgba(20, 18, 40, 0.94)",
+    borderColor: "rgba(255,255,255,0.14)",
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  text: { color: "#C9CCE3", fontWeight: "600" },
+  ctaPrimary: {
+    backgroundColor: "#FFDD00",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+  },
   ctaPrimaryText: { color: "#222", fontWeight: "700" },
-  ctaSecondary: { backgroundColor: "#6672E7", paddingVertical: 8, paddingHorizontal: 12, borderRadius: 10, marginLeft: 6 },
+  ctaSecondary: {
+    backgroundColor: "#6672E7",
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
   ctaSecondaryText: { color: "#fff", fontWeight: "700" },
-
-})
+  close: { paddingHorizontal: 6, paddingVertical: 4 },
+  closeText: { color: "#A6ACC9", fontSize: 15 },
+});
