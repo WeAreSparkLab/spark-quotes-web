@@ -1,5 +1,6 @@
 import { messaging, getToken, onMessage } from './firebaseConfig';
 import { supabase } from '../supabaseClient';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const VAPID_KEY =
   'BCDXD-701XVUiFogRBlbGmsM28_U24jAifYNri76d_XnCGCLEXEb4thEmj_RINtqgY1JIDptWuI3f6ATHQxgtzY';
@@ -54,6 +55,34 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   ]);
 }
 
+const DEVICE_ID_KEY = 'sparkDeviceId';
+
+/**
+ * Stable id for this browser.
+ *
+ * FCM tokens identify a browser and get reissued over time, so without this
+ * every re-registration added another row and one device ended up with
+ * several live tokens — each of which FCM delivers, hence duplicate
+ * notifications. Keyed on this, registration is idempotent per device.
+ */
+async function getDeviceId(): Promise<string> {
+  try {
+    const existing = await AsyncStorage.getItem(DEVICE_ID_KEY);
+    if (existing) return existing;
+
+    const generated =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `dev-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
+    await AsyncStorage.setItem(DEVICE_ID_KEY, generated);
+    return generated;
+  } catch {
+    // Storage unavailable — fall back to a per-session id rather than failing
+    return `ephemeral-${Math.random().toString(36).slice(2, 10)}`;
+  }
+}
+
 async function getAndStoreToken(userId: string): Promise<string | null> {
   try {
     if (!messaging) {
@@ -77,17 +106,33 @@ async function getAndStoreToken(userId: string): Promise<string | null> {
       return null;
     }
 
+    const deviceId = await getDeviceId();
+
+    // Keyed on the device, so re-registering replaces this browser's row
+    // instead of adding another one alongside it.
     const { error } = await supabase
       .from('fcm_tokens')
       .upsert(
-        { user_id: userId, token, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id,token' }
+        { user_id: userId, token, device_id: deviceId, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id,device_id' }
       );
 
     if (error) {
       console.error('Error storing FCM token:', error);
       return null;
     }
+
+    // This browser may still have rows from before device ids existed, or
+    // from a previous token. A device only ever needs its current one.
+    const { error: cleanupError } = await supabase
+      .from('fcm_tokens')
+      .delete()
+      .eq('user_id', userId)
+      .neq('token', token)
+      .or(`device_id.eq.${deviceId},device_id.is.null`);
+
+    if (cleanupError) console.log('Token cleanup skipped:', cleanupError.message);
+
     return token;
   } catch (error) {
     console.error('Error obtaining FCM token:', error);
