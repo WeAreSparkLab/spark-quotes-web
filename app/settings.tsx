@@ -26,26 +26,14 @@ import SupportSection from '../components/SupportSection'
 import { shareApp } from "../utils/shareApp";
 import { openCoffee, openTipChooser, getStripeCTA } from "../utils/support";
 import { LINKS } from "../utils/support";
+import { TIME_SLOTS, DEFAULT_SLOT_LABELS } from "../utils/schedule";
 
 const dayOptions = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-/**
- * The slots a user can opt into. How many they pick IS the daily frequency —
- * a separate frequency number contradicted these checkboxes (picking "1" and
- * "Night" produced no times at all, so notifications silently never arrived).
- *
- * One a day at 09:00 is the default; anyone who wants more can add slots.
- */
-const TIME_SLOTS: { label: string; time: string }[] = [
-  { label: "Morning", time: "09:00" },
-  { label: "Midday", time: "12:00" },
-  { label: "Afternoon", time: "15:00" },
-  { label: "Evening", time: "18:00" },
-  { label: "Night", time: "21:00" },
-];
-
+// Slot definitions live in utils/schedule so Settings and the home screen
+// (which keys the displayed quote to these slots) can never disagree.
 const timeOptions = TIME_SLOTS.map((s) => s.label);
-const DEFAULT_TIMES = ["Morning"];
+const DEFAULT_TIMES = DEFAULT_SLOT_LABELS;
 
 const PRIVACY_POLICY_URL = "https://quotes.wearesparklab.com/privacy";
 
