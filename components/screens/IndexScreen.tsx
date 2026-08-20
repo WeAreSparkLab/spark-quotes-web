@@ -338,7 +338,7 @@ export default function IndexScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Show another quote"
                   >
-                    <Ionicons name="shuffle" color="#FFFFFF" size={20} />
+                    <Ionicons name="shuffle" color="#C9CCE3" size={18} />
                     <Text style={styles.secondaryButtonText}>
                       {isShuffling ? "Finding…" : "Another quote"}
                     </Text>
@@ -351,7 +351,7 @@ export default function IndexScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Share this quote"
                   >
-                    <Ionicons name="share-social" color="#FFFFFF" size={20} />
+                    <Ionicons name="share-social" color="#DDE1FF" size={18} />
                     <Text style={styles.shareButtonText}>
                       {isSharing ? "Preparing…" : "Share"}
                     </Text>
@@ -437,19 +437,29 @@ const styles = StyleSheet.create({
     marginTop: 6,
     marginBottom: 15,
   },
+  // The quote is the reason the screen exists, so it carries the visual
+  // weight — the controls below are deliberately quieter.
   quoteText: {
     ...AppStyles.quote,
     color: "#FFFFFF",
     textAlign: "center",
-    fontSize: 24,
+    fontSize: 27,
+    lineHeight: 40,
     alignSelf: "stretch",
     flexShrink: 1,
     flexWrap: "wrap",
-    marginTop: 12,
+    marginTop: 20,
+    marginBottom: 0,
   },
   authorText: {
     ...AppStyles.author,
-    color: "#D0D0D0",
+    color: "#C9CCE3",
+    fontSize: 16,
+    // Centred under the quote rather than floating off to the right, so the
+    // two read as one block
+    alignSelf: "center",
+    textAlign: "center",
+    marginTop: 18,
   },
   quoteCard: {
     backgroundColor: "rgba(12, 10, 26, 0.6)",
@@ -507,47 +517,48 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
-    marginTop: 24,
+    // Extra separation so the controls sit apart from the quote instead of
+    // competing with it
+    marginTop: 34,
   },
   secondaryButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.10)",
+    gap: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: "transparent",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.22)",
+    borderColor: "rgba(255, 255, 255, 0.18)",
   },
   secondaryButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 15,
+    color: "#C9CCE3",
+    fontWeight: "600",
+    fontSize: 14,
   },
+  // Still the primary action — the only tinted control on the card — but a
+  // soft brand wash rather than a solid block that outshouts the quote.
   shareButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    borderRadius: 12,
-    backgroundColor: "#6672E7",
-    shadowColor: "#6672E7",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 6,
-    elevation: 4,
+    gap: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    backgroundColor: "rgba(102, 114, 231, 0.22)",
+    borderWidth: 1,
+    borderColor: "rgba(102, 114, 231, 0.6)",
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   shareButtonText: {
-    color: "#FFFFFF",
+    color: "#DDE1FF",
     fontWeight: "700",
-    fontSize: 15,
+    fontSize: 14,
   },
   // Sits under the action row. Kept low-contrast so it never competes with
   // Share — the top-left slot is taken by the category badge.
