@@ -13,7 +13,8 @@ import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "../components/common/Ionicons";
 import AppStyles from "../styles/AppStyles";
 import { useSupabase } from "./_layout";
-import { getFavoriteQuoteIds } from "../services/supabaseFavorites";
+import { getFavoriteQuoteIds, removeFavoriteQuote } from "../services/supabaseFavorites";
+import { shareQuote } from "../utils/shareQuote";
 import { supabase } from "../supabaseClient";
 
 
@@ -31,6 +32,8 @@ export default function FavoritesScreen() {
   const [favoriteQuotes, setFavoriteQuotes] = useState<Quote[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sharingId, setSharingId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
 
   const fetchFavoriteQuotes = useCallback(async () => {
     if (!userId) {
@@ -78,6 +81,35 @@ export default function FavoritesScreen() {
     }, [fetchFavoriteQuotes])
   );
 
+  // Favourites are the quotes someone already told us they like, so this is
+  // the best place to offer sharing — not just the home screen.
+  const handleShare = async (quote: Quote) => {
+    if (sharingId) return;
+    setSharingId(quote.id);
+    try {
+      await shareQuote(quote);
+    } finally {
+      setSharingId(null);
+    }
+  };
+
+  const handleRemove = async (quote: Quote) => {
+    if (!userId || removingId) return;
+    setRemovingId(quote.id);
+
+    // Optimistic: the row disappears immediately, and comes back if the
+    // delete fails, rather than leaving the list looking stale.
+    const previous = favoriteQuotes;
+    setFavoriteQuotes((current) => current.filter((q) => q.id !== quote.id));
+
+    const ok = await removeFavoriteQuote(userId, quote.id);
+    if (!ok) {
+      setFavoriteQuotes(previous);
+      alert("Could not remove that favourite. Please try again.");
+    }
+    setRemovingId(null);
+  };
+
   const renderQuoteItem = ({ item }: { item: Quote }) => (
     <View style={styles.quoteCard}>
       <View style={[AppStyles.categoryBadge, { backgroundColor: "#e63946" }]}>
@@ -85,6 +117,32 @@ export default function FavoritesScreen() {
       </View>
       <Text style={styles.quoteText}>"{item.text}"</Text>
       <Text style={styles.authorText}>- {item.author}</Text>
+
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          onPress={() => handleShare(item)}
+          disabled={sharingId === item.id}
+          style={[styles.shareButton, sharingId === item.id && styles.buttonDisabled]}
+          accessibilityRole="button"
+          accessibilityLabel="Share this quote"
+        >
+          <Ionicons name="share-social" color="#FFFFFF" size={18} />
+          <Text style={styles.shareButtonText}>
+            {sharingId === item.id ? "Preparing…" : "Share"}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => handleRemove(item)}
+          disabled={removingId === item.id}
+          style={[styles.removeButton, removingId === item.id && styles.buttonDisabled]}
+          accessibilityRole="button"
+          accessibilityLabel="Remove from favourites"
+        >
+          <Ionicons name="heart-dislike-outline" color="#E0A0A5" size={18} />
+          <Text style={styles.removeButtonText}>Remove</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -172,11 +230,42 @@ const styles = StyleSheet.create({
   },
   flatListContent: {
     paddingHorizontal: 16,
-    paddingBottom: 20,
-    paddingTop: 60,
-    paddingEnd: 60,
-    paddingStart: 60,
+    paddingBottom: 24,
+    paddingTop: 12,
+    // Was 60 each side, which left cards too narrow for the action buttons
+    // on a phone.
+    maxWidth: 760,
+    width: "100%",
+    alignSelf: "center",
   },
+  cardActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginTop: 16,
+  },
+  shareButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    backgroundColor: "#6672E7",
+  },
+  shareButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  removeButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.18)",
+  },
+  removeButtonText: { color: "#E0A0A5", fontWeight: "700", fontSize: 14 },
+  buttonDisabled: { opacity: 0.6 },
   quoteCard: {
     backgroundColor: "rgba(12, 10, 26, 0.8)",
     borderRadius: 12,

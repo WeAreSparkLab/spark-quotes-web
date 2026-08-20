@@ -186,7 +186,7 @@ useEffect(() => {
               "url": "https://quotes.wearesparklab.com/",
               "potentialAction": {
                 "@type": "SearchAction",
-                "target": "https://quotes.wearesparklab.com/?q={search_term_string}",
+                "target": "https://quotes.wearesparklab.com/search?q={search_term_string}",
                 "query-input": "required name=search_term_string"
               },
               "publisher": { "@type": "Organization", "name": "We Are SparkLab" }
@@ -249,6 +249,7 @@ useEffect(() => {
           <Stack.Screen name="settings" options={{ headerShown: false }} />
           <Stack.Screen name="submitQuote" options={{ headerShown: false }} />
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
+          <Stack.Screen name="search" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
         </Stack>
         {Platform.OS === "web" && showSupport ? <SupportUsBar /> : null}
