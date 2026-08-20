@@ -34,6 +34,7 @@ import {
 import { openLink } from '../../utils/openLink';
 import { shareQuote } from '../../utils/shareQuote';
 import NotificationPrompt from '../NotificationPrompt';
+import { recordVisit, streakLabel, type Streak } from '../../utils/streak';
 
 
 interface Quote {
@@ -60,6 +61,7 @@ export default function IndexScreen() {
   const [isSharing, setIsSharing] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
   const [hasReported, setHasReported] = useState(false);
+  const [streak, setStreak] = useState<Streak | null>(null);
 
   // Cached pool of quotes for the current topic selection, so tapping
   // "Another quote" doesn't re-query Supabase on every press.
@@ -174,6 +176,11 @@ export default function IndexScreen() {
     }
   };
 
+  // Count today's visit once, on mount
+  useEffect(() => {
+    recordVisit().then(setStreak).catch(() => {});
+  }, []);
+
   // A new quote is a new report target
   useEffect(() => {
     setHasReported(false);
@@ -267,6 +274,15 @@ export default function IndexScreen() {
         >
           <Text style={styles.sceneTitle}>Spark Quotes</Text>
           <Text style={styles.sceneSubtitle}>Your Quote of the Day</Text>
+
+          <TouchableOpacity
+            onPress={() => router.push("/search")}
+            style={styles.searchButton}
+            accessibilityRole="button"
+            accessibilityLabel="Search quotes"
+          >
+            <Ionicons name="search" color="#FFFFFF" size={22} />
+          </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContentContainer} alwaysBounceVertical={false}>
@@ -278,6 +294,13 @@ export default function IndexScreen() {
                 source={require("../../assets/images/star-icon.png")}
                 style={styles.starImage}
               />
+
+              {streak && streak.current > 1 ? (
+                <View style={styles.streakPill}>
+                  <Ionicons name="flame" color="#FFB020" size={15} />
+                  <Text style={styles.streakText}>{streakLabel(streak)}</Text>
+                </View>
+              ) : null}
               <Animated.View style={[styles.quoteCard, cardAnimatedStyle]}>
                 {/* Category badge */}
                 <View style={[AppStyles.categoryBadge, { backgroundColor: "#e63946" }]}>
@@ -453,6 +476,30 @@ const styles = StyleSheet.create({
     right: 10,
     padding: 5,
     zIndex: 10,
+  },
+  streakPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "center",
+    gap: 7,
+    marginBottom: 12,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+    borderRadius: 999,
+    backgroundColor: "rgba(255, 176, 32, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 176, 32, 0.3)",
+  },
+  streakText: { color: "#FFD08A", fontWeight: "700", fontSize: 13 },
+  searchButton: {
+    position: "absolute",
+    right: 16,
+    top: Platform.OS === "web" ? 78 : 4,
+    padding: 10,
+    borderRadius: 999,
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.16)",
   },
   actionRow: {
     flexDirection: "row",
