@@ -143,7 +143,7 @@ export default async function handler(req, res) {
     for (const row of allTokens || []) {
       if (!row?.token || seenTokens.has(row.token)) continue;
       seenTokens.add(row.token);
-      fcmTokens.push({ token: row.token });
+      fcmTokens.push({ token: row.token, tokenUserId: row.user_id });
     }
 
     console.log(
@@ -152,6 +152,7 @@ export default async function handler(req, res) {
     
     let sent = 0;
     const staleTokens = [];
+    const logRows = [];
     console.log(`Found ${fcmTokens?.length || 0} FCM tokens for users:`, userIds.map(id => id.substring(0, 8)));
     
     if (fcmTokens && fcmTokens.length > 0 && FIREBASE_SERVICE_ACCOUNT) {
@@ -165,7 +166,7 @@ export default async function handler(req, res) {
       const accessToken = await getAccessToken(serviceAccount);
       const projectId = serviceAccount.project_id;
       
-      for (const { token } of fcmTokens) {
+      for (const { token, tokenUserId } of fcmTokens) {
         const message = {
           message: {
             token,
@@ -207,6 +208,12 @@ export default async function handler(req, res) {
         if (response.ok) {
           sent++;
           console.log(`Sent to token ${token.substring(0, 20)}...`);
+          logRows.push({
+            user_id: tokenUserId,
+            token_prefix: token.substring(0, 22),
+            status: 'sent',
+            quote_preview: quoteBody.substring(0, 80),
+          });
         } else {
           const errorText = await response.text();
           console.error(`Failed: ${errorText}`);
@@ -220,7 +227,23 @@ export default async function handler(req, res) {
             errorText.includes('INVALID_ARGUMENT');
 
           if (isDeadToken) staleTokens.push(token);
+
+          logRows.push({
+            user_id: tokenUserId,
+            token_prefix: token.substring(0, 22),
+            status: 'failed',
+            error: errorText.substring(0, 500),
+            quote_preview: quoteBody.substring(0, 80),
+          });
         }
+      }
+
+      // Record outcomes. Vercel's function logs are not reachable from
+      // everywhere this gets debugged from, and "nothing arrived" is
+      // impossible to diagnose without knowing what FCM actually said.
+      if (logRows.length > 0) {
+        const { error: logError } = await supabase.from('notification_log').insert(logRows);
+        if (logError) console.error('Could not write notification log:', logError);
       }
 
       // Prune dead tokens so tomorrow's run is cleaner
