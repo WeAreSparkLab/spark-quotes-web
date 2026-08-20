@@ -35,6 +35,7 @@ import { openLink } from '../../utils/openLink';
 import { shareQuote } from '../../utils/shareQuote';
 import NotificationPrompt from '../NotificationPrompt';
 import { recordVisit, streakLabel, type Streak } from '../../utils/streak';
+import { currentSlotKey, getSlotHours } from '../../utils/schedule';
 
 
 interface Quote {
@@ -62,6 +63,7 @@ export default function IndexScreen() {
   const [isShuffling, setIsShuffling] = useState(false);
   const [hasReported, setHasReported] = useState(false);
   const [streak, setStreak] = useState<Streak | null>(null);
+  const [slotCount, setSlotCount] = useState(1);
 
   // Cached pool of quotes for the current topic selection, so tapping
   // "Another quote" doesn't re-query Supabase on every press.
@@ -117,10 +119,15 @@ export default function IndexScreen() {
 
   const getQuoteOfTheDay = useCallback(async () => {
     setIsLoading(true);
-    const today = new Date().toISOString().split("T")[0];
+
+    // Keyed to the notification slot, not the calendar day. Caching per day
+    // meant someone on several notifications a day got several nudges all
+    // pointing at the same quote — so each one now brings a fresh one, while
+    // staying put between them.
+    const today = await currentSlotKey();
 
     try {
-      // 1) Use cached “quote of the day” if same day
+      // 1) Use the cached quote if we are still in the same slot
       const storedQuoteData = await AsyncStorage.getItem("quoteOfTheDay");
       if (storedQuoteData) {
         const { quote, date } = JSON.parse(storedQuoteData);
@@ -179,6 +186,7 @@ export default function IndexScreen() {
   // Count today's visit once, on mount
   useEffect(() => {
     recordVisit().then(setStreak).catch(() => {});
+    getSlotHours().then((h) => setSlotCount(h.length)).catch(() => {});
   }, []);
 
   // A new quote is a new report target
@@ -273,7 +281,9 @@ export default function IndexScreen() {
           ]}
         >
           <Text style={styles.sceneTitle}>Spark Quotes</Text>
-          <Text style={styles.sceneSubtitle}>Your Quote of the Day</Text>
+          <Text style={styles.sceneSubtitle}>
+            {slotCount > 1 ? "Your quote right now" : "Your Quote of the Day"}
+          </Text>
 
           <TouchableOpacity
             onPress={() => router.push("/search")}
