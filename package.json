@@ -24,7 +24,6 @@
     "@react-navigation/native": "^7.1.6",
     "@stripe/stripe-react-native": "0.45.0",
     "@supabase/supabase-js": "^2.56.1",
-    "@vercel/og": "^1.0.1",
     "expo": "53.0.22",
     "expo-asset": "~11.1.7",
     "expo-blur": "~14.1.4",
