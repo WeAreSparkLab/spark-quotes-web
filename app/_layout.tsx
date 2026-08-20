@@ -178,20 +178,9 @@ useEffect(() => {
           <meta name="twitter:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
           <meta name="twitter:image" content="https://quotes.wearesparklab.com/og.png" />
           <link rel="canonical" href="https://quotes.wearesparklab.com/" />
-          <script type="application/ld+json" dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "name": "Spark Quotes",
-              "url": "https://quotes.wearesparklab.com/",
-              "potentialAction": {
-                "@type": "SearchAction",
-                "target": "https://quotes.wearesparklab.com/search?q={search_term_string}",
-                "query-input": "required name=search_term_string"
-              },
-              "publisher": { "@type": "Organization", "name": "We Are SparkLab" }
-            })
-          }} />
+          {/* Structured data is injected by scripts/postbuild.cjs:
+              expo-router/head drops <script> tags, so declaring JSON-LD here
+              never reached the served HTML. */}
           <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js" />
           {/* Ad pixels — inert unless EXPO_PUBLIC_META_PIXEL_ID / _GOOGLE_TAG_ID are set */}
           {pixelScript ? (
