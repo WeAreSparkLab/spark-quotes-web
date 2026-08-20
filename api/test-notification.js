@@ -72,8 +72,9 @@ export default async function handler(req, res) {
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
     // Get a random quote
-    const { data: quoteRows } = await supabase.from('approved_quotes').select('text, author').limit(200);
-    const quote = (quoteRows && quoteRows.length) ? quoteRows[Math.floor(Math.random() * quoteRows.length)] : { text: 'Daily inspiration!', author: 'Spark Quotes' };
+    // Mirrors the real cron: a teaser, not a quote, so the notification and
+    // the app can never disagree about which quote is today's.
+    const quote = { text: "Today’s quote is waiting for you.", author: "Spark Quotes" };
     
     // Every device, so we can see exactly which tokens are dead
     const { data: allTokens } = await supabase
@@ -118,7 +119,7 @@ export default async function handler(req, res) {
         message: {
           token,
           notification: {
-            title: `✨ ${quote.author}`,
+            title: `✨ Spark Quotes`,
             body: quote.text,
           },
           webpush: {
