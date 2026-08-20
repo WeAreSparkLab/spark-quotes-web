@@ -89,7 +89,8 @@ footer{margin:56px 0 0;padding:24px 0 0;border-top:1px solid rgba(255,255,255,.1
 footer a{color:#BFC4D6}
 `.trim();
 
-function page({ title, description, canonical, jsonLd, body }) {
+function page({ title, description, canonical, jsonLd, body, image }) {
+  const ogImage = image || `${SITE}/og.png`;
   return `<!doctype html>
 <html lang="en-GB">
 <head>
@@ -106,11 +107,11 @@ function page({ title, description, canonical, jsonLd, body }) {
 <meta property="og:type" content="article">
 <meta property="og:url" content="${canonical}">
 <meta property="og:site_name" content="Spark Quotes">
-<meta property="og:image" content="${SITE}/og.png">
+<meta property="og:image" content="${ogImage}">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="${SITE}/og.png">
+<meta name="twitter:image" content="${ogImage}">
 <script defer data-domain="quotes.wearesparklab.com" src="https://plausible.io/js/script.js"></script>
 <script type="application/ld+json">${JSON.stringify(jsonLd)}</script>
 <style>${CSS}</style>
@@ -224,6 +225,7 @@ ${related
 </div>`;
 
   return page({
+    image: `${SITE}/api/og?id=${quote.id}`,
     title: `"${truncate(quote.text, 70)}" — ${quote.author}`,
     description: `${truncate(quote.text, 150)} — ${quote.author}. A ${
       quote.category || 'daily'
