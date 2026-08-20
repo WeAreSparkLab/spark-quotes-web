@@ -134,9 +134,21 @@ export default async function handler(req, res) {
       .in('user_id', userIds)
       .order('updated_at', { ascending: false });
 
-    const fcmTokens = (allTokens || []).map(t => ({ token: t.token }));
+    // Belt and braces: never send the same token twice in one run. A token
+    // identifies a browser, so a repeat here is a duplicate notification on
+    // someone's screen — which is exactly what happened when the same token
+    // was stored under more than one account.
+    const seenTokens = new Set();
+    const fcmTokens = [];
+    for (const row of allTokens || []) {
+      if (!row?.token || seenTokens.has(row.token)) continue;
+      seenTokens.add(row.token);
+      fcmTokens.push({ token: row.token });
+    }
 
-    console.log(`Sending to ${fcmTokens.length} token(s) across ${userIds.length} user(s)`);
+    console.log(
+      `Sending to ${fcmTokens.length} unique token(s) from ${(allTokens || []).length} row(s) across ${userIds.length} user(s)`
+    );
     
     let sent = 0;
     const staleTokens = [];
