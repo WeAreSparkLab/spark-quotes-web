@@ -96,38 +96,37 @@ export default async function handler(req, res) {
     const userIds = usersToNotify.map(p => p.user_id);
     console.log(`Found ${usersToNotify.length} users to notify for hour ${currentUTCHour}:`, userIds.map(id => id.substring(0, 8)));
     
-    // Pick a real quote to put IN the notification. This previously queried a
-    // `quotes` table that does not exist, so it always fell back — and the
-    // result was never used anyway, leaving every notification identical.
-    let quote = { text: 'Open Spark Quotes for today\'s pick.', author: 'Spark Quotes' };
-
-    const { data: quoteRows, error: quoteError } = await supabase
-      .from('approved_quotes')
-      .select('text, author')
-      .limit(500);
-
-    if (quoteError) {
-      console.error('Could not load quotes, using fallback:', quoteError);
-    } else if (quoteRows && quoteRows.length > 0) {
-      quote = quoteRows[Math.floor(Math.random() * quoteRows.length)];
-    }
-
-    // Keep the body inside what a notification will actually display
-    const quoteBody = quote.text.length > 120
-      ? `${quote.text.slice(0, 119).trimEnd()}…`
-      : quote.text;
+    // The notification deliberately does NOT contain a quote.
+    //
+    // It used to send a random one, but the app shows the quote of the day it
+    // cached on that device — two unrelated picks, so the quote in the
+    // notification was never the one you saw after tapping it. Teasing
+    // instead keeps the two consistent and gives a reason to open the app.
+    //
+    // (To go the other way — put the quote back and have tapping open that
+    // exact quote — the notification would need to carry its id and the app
+    // would need to honour it.)
+    const teasers = [
+      'Today\'s quote is waiting for you.',
+      'Your quote of the day is ready.',
+      'Something worth reading is waiting.',
+      'One good line, ready when you are.',
+      'Your daily spark is here.',
+    ];
+    const quoteBody = teasers[Math.floor(Math.random() * teasers.length)];
+    const quote = { text: quoteBody, author: 'Spark Quotes' };
     
-    // Send to EVERY token a user has, so all their devices get the quote.
+    // Send to EVERY token a user has, so all their devices are notified.
     //
-    // This used to keep only the most recent token per user. That did stop
-    // duplicates, but it also meant a person with a phone and a laptop got
-    // the notification on exactly one of them — whichever they happened to
-    // open last, since every app load refreshes that device's token.
+    // This used to keep only the most recent token per user, which meant
+    // someone with a phone and a laptop was notified on exactly one of them —
+    // whichever they opened last, since every app load refreshes that
+    // device's token.
     //
-    // The real cause of duplicates is dead tokens piling up: each refresh
-    // inserts a new row and the old one is never removed. So instead of
-    // silencing devices, delete tokens FCM rejects (below) and let the
-    // shared notification tag collapse anything that slips through.
+    // Duplicates are prevented at the source instead: a token is unique to a
+    // browser and registration is keyed on a device id, so one device can
+    // only ever hold one token. The de-duplication below is a second line of
+    // defence in case that ever drifts again.
     const { data: allTokens } = await supabase
       .from('fcm_tokens')
       .select('user_id, token, updated_at')
@@ -171,7 +170,7 @@ export default async function handler(req, res) {
           message: {
             token,
             notification: {
-              title: `✨ ${quote.author}`,
+              title: `✨ Spark Quotes`,
               body: quoteBody,
             },
             webpush: {
