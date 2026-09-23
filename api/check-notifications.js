@@ -12,15 +12,17 @@ export default async function handler(req, res) {
     
     // Fetch ALL notification preferences
     const { data: prefs, error: prefError } = await supabase
+      .schema('quotes')
       .from('notification_preferences')
       .select('*');
-    
+
     if (prefError) {
       return res.status(500).json({ error: prefError.message });
     }
-    
+
     // Fetch ALL FCM tokens
     const { data: tokens, error: tokenError } = await supabase
+      .schema('quotes')
       .from('fcm_tokens')
       .select('*');
     
