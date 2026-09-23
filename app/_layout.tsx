@@ -240,6 +240,7 @@ useEffect(() => {
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
           <Stack.Screen name="search" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
+          <Stack.Screen name="reset-password" options={{ headerShown: false }} />
         </Stack>
         {Platform.OS === "web" && showSupport ? <SupportUsBar /> : null}
       </SupabaseContext.Provider>
