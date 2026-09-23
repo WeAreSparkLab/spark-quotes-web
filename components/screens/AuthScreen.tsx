@@ -1,20 +1,32 @@
-// app/AuthScreen.tsx 
+// app/AuthScreen.tsx
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
   StyleSheet, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { supabase } from '../../supabaseClient';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ensureProfile } from '../../utils/ensureProfile';
+
+// Same production domain used throughout the app (see utils/shareApp.ts,
+// utils/shareQuote.ts). Supabase needs this exact URL allow-listed under
+// Auth > URL Configuration > Redirect URLs, or the email link will bounce.
+const RESET_PASSWORD_REDIRECT_URL = 'https://quotes.wearesparklab.com/reset-password';
 
 export default function AuthScreen() {
   const router = useRouter();
+  const { forgot } = useLocalSearchParams<{ forgot?: string }>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [isLogin, setIsLogin] = useState(true);
+  // Arriving from the reset-password screen's "request a new link" button
+  // (/auth?forgot=1) opens straight into the forgot-password form.
+  const [showForgotPassword, setShowForgotPassword] = useState(forgot === '1');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
 
   const handleAuth = async () => {
     setLoading(true);
@@ -66,6 +78,83 @@ export default function AuthScreen() {
     }
   };
 
+  const handleResetPassword = async () => {
+    setResetLoading(true);
+    setResetMessage('');
+    try {
+      await supabase.auth.resetPasswordForEmail(resetEmail.trim(), {
+        redirectTo: RESET_PASSWORD_REDIRECT_URL,
+      });
+    } catch (error) {
+      // Swallowed on purpose — see the message below.
+      console.error('Reset password error:', error);
+    } finally {
+      // Same message whether the email exists, the send failed, or
+      // anything else, so this can't be used to check which emails are
+      // registered.
+      setResetMessage('If that email has an account, a reset link has been sent.');
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetKeyPress = (e: any) => {
+    if (e.key === 'Enter' || e.keyCode === 13) {
+      handleResetPassword();
+    }
+  };
+
+  if (showForgotPassword) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Reset Password</Text>
+          <Text style={styles.subtitle}>
+            Enter your email and we'll send you a link to reset it.
+          </Text>
+        </View>
+
+        <View style={styles.formContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor="#B0B0B0"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={resetEmail}
+            onChangeText={setResetEmail}
+            onKeyPress={handleResetKeyPress}
+          />
+
+          {!!resetMessage && <Text style={styles.message}>{resetMessage}</Text>}
+
+          <TouchableOpacity
+            style={styles.authButton}
+            onPress={handleResetPassword}
+            disabled={resetLoading}
+          >
+            {resetLoading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={styles.authButtonText}>Send Reset Link</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.toggleButton}
+            onPress={() => {
+              setShowForgotPassword(false);
+              setResetMessage('');
+              setResetEmail('');
+            }}
+            disabled={resetLoading}
+          >
+            <Text style={styles.toggleButtonText}>Back to Sign In</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -95,6 +184,16 @@ export default function AuthScreen() {
           onChangeText={setPassword}
           onKeyPress={handleKeyPress}
         />
+
+        {isLogin && (
+          <TouchableOpacity
+            style={styles.forgotPasswordButton}
+            onPress={() => { setShowForgotPassword(true); setMessage(''); }}
+            disabled={loading}
+          >
+            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+          </TouchableOpacity>
+        )}
 
         {!!message && <Text style={styles.message}>{message}</Text>}
 
@@ -178,6 +277,16 @@ const styles = StyleSheet.create({
     color: '#FFD700', // Warning/info color
     textAlign: 'center',
     marginBottom: 15,
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+    marginBottom: 15,
+  },
+  forgotPasswordText: {
+    color: '#6672E7', // Accent color
+    fontSize: 13,
+    fontWeight: '600',
   },
   authButton: {
     backgroundColor: '#6672E7', // Accent color
