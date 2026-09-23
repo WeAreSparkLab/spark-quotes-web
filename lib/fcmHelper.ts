@@ -111,6 +111,7 @@ async function getAndStoreToken(userId: string): Promise<string | null> {
     // Keyed on the device, so re-registering replaces this browser's row
     // instead of adding another one alongside it.
     const { error } = await supabase
+      .schema('quotes')
       .from('fcm_tokens')
       .upsert(
         { user_id: userId, token, device_id: deviceId, updated_at: new Date().toISOString() },
@@ -125,6 +126,7 @@ async function getAndStoreToken(userId: string): Promise<string | null> {
     // This browser may still have rows from before device ids existed, or
     // from a previous token. A device only ever needs its current one.
     const { error: cleanupError } = await supabase
+      .schema('quotes')
       .from('fcm_tokens')
       .delete()
       .eq('user_id', userId)
@@ -180,6 +182,7 @@ async function ensureNotificationPreferences(userId: string): Promise<void> {
   }
 
   const { error } = await supabase
+    .schema('quotes')
     .from('notification_preferences')
     .upsert(
       {

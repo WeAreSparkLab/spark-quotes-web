@@ -24,6 +24,7 @@ export async function addFavoriteQuote(userId: string, quoteId: string): Promise
   
   // Check if the quote is already favorited by the user
   const { data: existingFavorites, error: checkError } = await supabase
+    .schema('quotes')
     .from('favorite_quotes')
     .select('id')
     .eq('user_id', userId)
@@ -41,6 +42,7 @@ export async function addFavoriteQuote(userId: string, quoteId: string): Promise
 
   // Insert the new favorite quote
   const { error } = await supabase
+    .schema('quotes')
     .from('favorite_quotes')
     .insert({ user_id: userId, quote_id: quoteId });
 
@@ -66,6 +68,7 @@ export async function removeFavoriteQuote(userId: string, quoteId: string): Prom
   }
 
   const { error } = await supabase
+    .schema('quotes')
     .from('favorite_quotes')
     .delete()
     .eq('user_id', userId)
@@ -92,6 +95,7 @@ export async function getFavoriteQuoteIds(userId: string): Promise<string[]> {
   }
 
   const { data, error } = await supabase
+    .schema('quotes')
     .from('favorite_quotes')
     .select('quote_id')
     .eq('user_id', userId);
@@ -116,6 +120,7 @@ export async function isQuoteFavorited(userId: string, quoteId: string): Promise
   }
 
   const { data, error } = await supabase
+    .schema('quotes')
     .from('favorite_quotes')
     .select('id')
     .eq('user_id', userId)

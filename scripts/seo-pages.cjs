@@ -21,10 +21,10 @@ const path = require('path');
 
 const SITE = 'https://quotes.wearesparklab.com';
 const SUPABASE_URL =
-  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://nmzjdcwjqutqdgqkmesy.supabase.co';
+  process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://zckbrbqxnibzmuesqsok.supabase.co';
 const SUPABASE_KEY =
   process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  'sb_publishable_63wactDAvFIMgCvsQi4_1w_GxGSNGwR';
+  'sb_publishable_-NEaU78G8mtqCRFc-9WEFg_aHA5OsIn';
 
 const dist = path.join(__dirname, '..', 'dist');
 
@@ -163,7 +163,11 @@ async function fetchAllQuotes() {
       `&offset=${from}&limit=${pageSize}`;
 
     const res = await fetch(url, {
-      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+        'Accept-Profile': 'quotes',
+      },
     });
 
     if (!res.ok) {

@@ -56,6 +56,7 @@ export default function FavoritesScreen() {
 
       // 2. Fetch the full quote details from the 'approved_quotes' table
       const { data, error: fetchError } = await supabase
+        .schema('quotes')
         .from("approved_quotes")
         .select("id, text, author, category")
         .in("id", favoriteIds); // Filter by the favorite IDs
