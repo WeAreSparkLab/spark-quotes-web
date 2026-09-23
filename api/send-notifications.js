@@ -28,6 +28,7 @@ export default async function handler(req, res) {
     
     // Fetch ALL enabled preferences with their timezones
     const { data: allPreferences, error: prefError } = await supabase
+      .schema('quotes')
       .from('notification_preferences')
       .select('user_id, times, timezone')
       .eq('enabled', true);
@@ -128,6 +129,7 @@ export default async function handler(req, res) {
     // only ever hold one token. The de-duplication below is a second line of
     // defence in case that ever drifts again.
     const { data: allTokens } = await supabase
+      .schema('quotes')
       .from('fcm_tokens')
       .select('user_id, token, updated_at')
       .in('user_id', userIds)
@@ -241,13 +243,14 @@ export default async function handler(req, res) {
       // everywhere this gets debugged from, and "nothing arrived" is
       // impossible to diagnose without knowing what FCM actually said.
       if (logRows.length > 0) {
-        const { error: logError } = await supabase.from('notification_log').insert(logRows);
+        const { error: logError } = await supabase.schema('quotes').from('notification_log').insert(logRows);
         if (logError) console.error('Could not write notification log:', logError);
       }
 
       // Prune dead tokens so tomorrow's run is cleaner
       if (staleTokens.length > 0) {
         const { error: pruneError } = await supabase
+          .schema('quotes')
           .from('fcm_tokens')
           .delete()
           .in('token', staleTokens);

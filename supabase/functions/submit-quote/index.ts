@@ -55,6 +55,7 @@ serve(async (req) => {
     // policy lets a user count their own rows.
     const since = new Date(Date.now() - WINDOW_MINUTES * 60 * 1000).toISOString()
     const { count, error: countError } = await supabase
+      .schema('quotes')
       .from('quotes_for_review')
       .select('id', { count: 'exact', head: true })
       .eq('submitted_by_user_id', user.id)
@@ -75,6 +76,7 @@ serve(async (req) => {
     // Goes into the moderation queue as pending. Nothing reaches the app
     // until approve_quote() copies it into approved_quotes.
     const { data, error } = await supabase
+      .schema('quotes')
       .from('quotes_for_review')
       .insert({
         text,
