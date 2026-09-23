@@ -15,13 +15,19 @@ type Phase = 'checking' | 'ready' | 'invalid' | 'success';
  * encoded in the URL hash (this project uses the default implicit flow, not
  * PKCE): `#access_token=...&type=recovery` on success, or
  * `#error=...&error_code=otp_expired&error_description=...` when the link is
- * expired or has already been used. The client library only fires an
- * onAuthStateChange event ('PASSWORD_RECOVERY') for the success case — the
- * error case is never broadcast — so we read the hash ourselves to tell the
- * two apart up front.
+ * expired or has already been used.
+ *
+ * Only the error case is safe to read ourselves. On success, supabase-js's
+ * own client-side init starts parsing this same hash the moment the page
+ * loads — well before React mounts anything — and *deletes* it from the URL
+ * once it succeeds. If our code re-checks the hash after that already
+ * happened, there's nothing left to find, and a perfectly valid link would
+ * get wrongly reported as invalid. So this only ever checks for the error
+ * shape, which supabase-js leaves untouched; the success case is detected
+ * separately, from supabase-js itself (see the effect below).
  */
-function readRecoveryParamsFromUrl(): { valid: boolean; error?: string } {
-  if (typeof window === 'undefined') return { valid: false };
+function readRecoveryErrorFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
 
   const hash = window.location.hash.startsWith('#')
     ? window.location.hash.slice(1)
@@ -30,17 +36,10 @@ function readRecoveryParamsFromUrl(): { valid: boolean; error?: string } {
 
   if (params.get('error') || params.get('error_code')) {
     const description = params.get('error_description');
-    return {
-      valid: false,
-      error: description ? description.replace(/\+/g, ' ') : 'This reset link is no longer valid.',
-    };
+    return description ? description.replace(/\+/g, ' ') : 'This reset link is no longer valid.';
   }
 
-  if (params.get('access_token') && params.get('type') === 'recovery') {
-    return { valid: true };
-  }
-
-  return { valid: false };
+  return null;
 }
 
 export default function ResetPasswordScreen() {
@@ -53,33 +52,52 @@ export default function ResetPasswordScreen() {
   const [message, setMessage] = useState('');
 
   useEffect(() => {
-    const initial = readRecoveryParamsFromUrl();
-
-    if (!initial.valid) {
+    // A genuinely expired/used link is the one case supabase-js leaves for
+    // us to detect ourselves (see readRecoveryErrorFromUrl for why).
+    const urlError = readRecoveryErrorFromUrl();
+    if (urlError) {
       setPhase('invalid');
-      setErrorMessage(initial.error || 'This page is only reachable from a password reset email.');
+      setErrorMessage(urlError);
       return;
     }
 
+    // No error in the URL: this is either a fresh, valid recovery link —
+    // whose token supabase-js may already have consumed and stripped from
+    // the hash by the time we get here, which is expected, not a problem —
+    // or the page was reached with no recovery link at all. Either way we
+    // wait for supabase-js's own signal rather than re-deciding from the
+    // URL ourselves: catch the PASSWORD_RECOVERY event if it hasn't fired
+    // yet, and also check directly for a session it may have already
+    // established before we finished subscribing (the session is saved
+    // synchronously, ahead of the event, which fires a tick later).
+    let settled = false;
+    const finish = (next: Phase, err?: string) => {
+      if (settled) return;
+      settled = true;
+      if (err) setErrorMessage(err);
+      setPhase(next);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') {
-        setPhase('ready');
-      }
+      if (event === 'PASSWORD_RECOVERY') finish('ready');
     });
 
-    // The PASSWORD_RECOVERY event normally arrives within milliseconds of
-    // mount. This is just a safety net in case it fires before we finish
-    // subscribing, so "checking" never hangs forever.
-    const fallback = setTimeout(async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setPhase((prev) => {
-        if (prev !== 'checking') return prev;
-        return session ? 'ready' : 'invalid';
-      });
-      if (!session) {
-        setErrorMessage((prev) => prev || 'This reset link has expired or already been used.');
-      }
-    }, 3000);
+    // Trade-off: someone already logged in who lands on this URL directly
+    // (no recovery link at all) will also see the "set a new password"
+    // form, since their existing session passes this same check. That's a
+    // harmless UX quirk, not a security issue — updateUser() still only
+    // ever changes the password of whoever this session actually belongs
+    // to — and it's the price of no longer needing our own racy read of
+    // the token supabase-js may have already consumed.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) finish('ready');
+    });
+
+    // Neither the event nor an existing session showed up — genuinely no
+    // recovery link was ever presented here.
+    const fallback = setTimeout(() => {
+      finish('invalid', 'This reset link has expired or already been used.');
+    }, 2500);
 
     return () => {
       subscription?.unsubscribe();
