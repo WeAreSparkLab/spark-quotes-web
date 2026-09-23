@@ -131,7 +131,7 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))} style={styles.backButton}>
           <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
         </TouchableOpacity>
         <Text style={styles.title}>Search quotes</Text>
