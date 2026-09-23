@@ -4,7 +4,7 @@ import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 
-const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://nmzjdcwjqutqdgqkmesy.supabase.co';
+const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://zckbrbqxnibzmuesqsok.supabase.co';
 
 // Browser-side publishable key. Public by design — it is compiled into the
 // client bundle either way — so it is not a secret and is safe to default to.
@@ -12,7 +12,7 @@ const url = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://nmzjdcwjqutqdgqkmes
 // The old anon JWT is deliberately NOT kept as a fallback: legacy JWT-based
 // keys are disabled on this project, so falling back to one would fail with
 // "legacy API keys are disabled" rather than failing obviously.
-const PUBLISHABLE_KEY = 'sb_publishable_63wactDAvFIMgCvsQi4_1w_GxGSNGwR';
+const PUBLISHABLE_KEY = 'sb_publishable_-NEaU78G8mtqCRFc-9WEFg_aHA5OsIn';
 
 const anon = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || PUBLISHABLE_KEY;
 

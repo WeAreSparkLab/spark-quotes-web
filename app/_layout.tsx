@@ -149,7 +149,7 @@ useEffect(() => {
   }, []);
 
   async function ensureProfile(userId: string) {
-    await supabase.from('profiles').upsert({ id: userId }, { onConflict: 'id' });
+    await supabase.schema('quotes').from('profiles').upsert({ id: userId }, { onConflict: 'id' });
   }
 
   return (

@@ -67,6 +67,7 @@ export default function SearchScreen() {
     const safe = trimmed.replace(/[,()]/g, " ");
 
     const { data, error } = await supabase
+      .schema('quotes')
       .from("approved_quotes")
       .select("id, text, author, category")
       .or(`text.ilike.%${safe}%,author.ilike.%${safe}%,category.ilike.%${safe}%`)

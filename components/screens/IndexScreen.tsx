@@ -106,6 +106,7 @@ export default function IndexScreen() {
     }
 
     const { data, error } = await supabase
+      .schema('quotes')
       .from("approved_quotes")
       .select("id, text, author, category")
       .in("category", topics);
@@ -245,7 +246,7 @@ export default function IndexScreen() {
   const handleReport = async () => {
     if (!currentQuote?.id || hasReported) return;
     try {
-      await supabase.from("quote_reports").insert({
+      await supabase.schema('quotes').from("quote_reports").insert({
         quote_id: currentQuote.id,
         reason: "inappropriate",
         reported_by_user_id: userId ?? null,

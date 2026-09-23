@@ -20,8 +20,8 @@ import { createElement as h } from 'react';
 
 export const config = { runtime: 'edge' };
 
-const SUPABASE_URL = 'https://nmzjdcwjqutqdgqkmesy.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_63wactDAvFIMgCvsQi4_1w_GxGSNGwR';
+const SUPABASE_URL = 'https://zckbrbqxnibzmuesqsok.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-NEaU78G8mtqCRFc-9WEFg_aHA5OsIn';
 
 const BG = '#0C0A1A';
 const BRAND = '#6672E7';
@@ -51,7 +51,13 @@ export default async function handler(request) {
     if (id) {
       const res = await fetch(
         `${SUPABASE_URL}/rest/v1/approved_quotes?select=text,author,category&id=eq.${encodeURIComponent(id)}`,
-        { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+        {
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+            'Accept-Profile': 'quotes',
+          },
+        }
       );
 
       if (res.ok) {

@@ -172,6 +172,7 @@ export default function Settings() {
         return;
       }
       const { data: profile, error } = await supabase
+        .schema('quotes')
         .from("profiles")
         .select("is_supporter")
         .eq("id", uid)
@@ -273,6 +274,7 @@ export default function Settings() {
           
           // First, try to update existing record
           const { data: existing, error: selectError } = await supabase
+            .schema('quotes')
             .from('notification_preferences')
             .select('id')
             .eq('user_id', userId)
@@ -285,6 +287,7 @@ export default function Settings() {
             // Update existing record
             console.log('Updating existing notification preferences...');
             const result = await supabase
+              .schema('quotes')
               .from('notification_preferences')
               .update({
                 enabled: notificationsEnabled,
@@ -299,6 +302,7 @@ export default function Settings() {
             // Insert new record
             console.log('Inserting new notification preferences...');
             const result = await supabase
+              .schema('quotes')
               .from('notification_preferences')
               .insert({
                 user_id: userId,
@@ -384,10 +388,10 @@ export default function Settings() {
       
       // Delete user data from tables
       await Promise.all([
-        supabase.from('favorites').delete().eq('user_id', userId),
-        supabase.from('notification_preferences').delete().eq('user_id', userId),
-        supabase.from('fcm_tokens').delete().eq('user_id', userId),
-        supabase.from('profiles').delete().eq('id', userId),
+        supabase.schema('quotes').from('favorites').delete().eq('user_id', userId),
+        supabase.schema('quotes').from('notification_preferences').delete().eq('user_id', userId),
+        supabase.schema('quotes').from('fcm_tokens').delete().eq('user_id', userId),
+        supabase.schema('quotes').from('profiles').delete().eq('id', userId),
       ]);
       
       // Delete the auth user

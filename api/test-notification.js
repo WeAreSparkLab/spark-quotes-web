@@ -78,6 +78,7 @@ export default async function handler(req, res) {
     
     // Every device, so we can see exactly which tokens are dead
     const { data: allTokens } = await supabase
+      .schema('quotes')
       .from('fcm_tokens')
       .select('token, updated_at')
       .eq('user_id', userId)
