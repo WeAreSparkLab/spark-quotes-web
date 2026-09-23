@@ -129,19 +129,11 @@ function injectHomepageJsonLd() {
     description:
       'One uplifting quote every time you open it. Pick your topics, save your favourites, and share the ones that land.',
     publisher: { '@type': 'Organization', name: 'We Are SparkLab' },
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: {
-        '@type': 'EntryPoint',
-        urlTemplate: 'https://quotes.wearesparklab.com/search?q={search_term_string}',
-      },
-      'query-input': 'required name=search_term_string',
-    },
   };
 
   const tag = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>\n</head>`;
   fs.writeFileSync(indexPath, html.replace('</head>', tag));
-  console.log('[postbuild] injected homepage JSON-LD (WebSite + SearchAction)');
+  console.log('[postbuild] injected homepage JSON-LD (WebSite)');
 }
 
 // ---------------------------------------------------------------------------
