@@ -285,15 +285,6 @@ export default function IndexScreen() {
           <Text style={styles.sceneSubtitle}>
             {slotCount > 1 ? "Your quote right now" : "Your Quote of the Day"}
           </Text>
-
-          <TouchableOpacity
-            onPress={() => router.push("/search")}
-            style={styles.searchButton}
-            accessibilityRole="button"
-            accessibilityLabel="Search quotes"
-          >
-            <Ionicons name="search" color="#FFFFFF" size={22} />
-          </TouchableOpacity>
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContentContainer} alwaysBounceVertical={false}>
@@ -512,16 +503,6 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 176, 32, 0.3)",
   },
   streakText: { color: "#FFD08A", fontWeight: "700", fontSize: 13 },
-  searchButton: {
-    position: "absolute",
-    right: 16,
-    top: Platform.OS === "web" ? 78 : 4,
-    padding: 10,
-    borderRadius: 999,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.16)",
-  },
   actionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
