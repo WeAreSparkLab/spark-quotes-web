@@ -384,40 +384,31 @@ export default function Settings() {
     if (!session?.user) return;
     setDeleting(true);
     try {
-      const userId = session.user.id;
-      
-      // Delete user data from tables
-      await Promise.all([
-        supabase.schema('quotes').from('favorites').delete().eq('user_id', userId),
-        supabase.schema('quotes').from('notification_preferences').delete().eq('user_id', userId),
-        supabase.schema('quotes').from('fcm_tokens').delete().eq('user_id', userId),
-        supabase.schema('quotes').from('profiles').delete().eq('id', userId),
-      ]);
-      
-      // Delete the auth user
-      const { error } = await supabase.rpc('delete_user');
-      if (error) {
-        console.log('RPC delete_user not available, signing out instead');
-      }
-      
+      // One atomic call: deletes the caller's app data and their actual
+      // Supabase Auth account together, or (if anything fails) neither --
+      // never a state where the account is told "deleted" but can still
+      // log back in.
+      const { error } = await supabase.schema('quotes').rpc('delete_user');
+      if (error) throw error;
+
       await supabase.auth.signOut();
-      
+
       if (Platform.OS === 'web') {
         alert("Account deleted. Your account and data have been removed.");
       } else {
         Alert.alert("Account deleted", "Your account and data have been removed.");
       }
-      
+
       router.replace("/");
     } catch (e: any) {
       console.error("Delete account failed:", e?.message ?? e);
-      
+
       if (Platform.OS === 'web') {
-        alert("Could not delete\n\nSome data was deleted. Please contact support if issues persist.");
+        alert("Could not delete account. Nothing was removed — please try again or contact support.");
       } else {
         Alert.alert(
-          "Could not delete",
-          "Some data was deleted. Please contact support if issues persist."
+          "Could not delete account",
+          "Nothing was removed — please try again or contact support."
         );
       }
     } finally {
