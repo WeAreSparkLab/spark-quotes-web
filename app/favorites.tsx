@@ -151,7 +151,7 @@ export default function FavoritesScreen() {
     <SafeAreaView style={styles.sceneContainer}>
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
             style={styles.backButton}
           >
             <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
