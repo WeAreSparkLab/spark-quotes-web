@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../supabaseClient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ensureProfile } from '../../utils/ensureProfile';
+import PasswordInput from '../common/PasswordInput';
 
 // Same production domain used throughout the app (see utils/shareApp.ts,
 // utils/shareQuote.ts). Supabase needs this exact URL allow-listed under
@@ -175,11 +176,10 @@ export default function AuthScreen() {
           onChangeText={setEmail}
           onKeyPress={handleKeyPress}
         />
-        <TextInput
+        <PasswordInput
           style={styles.input}
           placeholder="Password (min 8 characters)"
           placeholderTextColor="#B0B0B0"
-          secureTextEntry
           value={password}
           onChangeText={setPassword}
           onKeyPress={handleKeyPress}

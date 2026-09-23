@@ -1,11 +1,12 @@
 // components/screens/ResetPasswordScreen.tsx
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TouchableOpacity,
   StyleSheet, SafeAreaView, ActivityIndicator
 } from 'react-native';
 import { supabase } from '../../supabaseClient';
 import { useRouter } from 'expo-router';
+import PasswordInput from '../common/PasswordInput';
 
 type Phase = 'checking' | 'ready' | 'invalid' | 'success';
 
@@ -182,20 +183,18 @@ export default function ResetPasswordScreen() {
       </View>
 
       <View style={styles.formContainer}>
-        <TextInput
+        <PasswordInput
           style={styles.input}
           placeholder="New password (min 8 characters)"
           placeholderTextColor="#B0B0B0"
-          secureTextEntry
           value={newPassword}
           onChangeText={setNewPassword}
           onKeyPress={handleKeyPress}
         />
-        <TextInput
+        <PasswordInput
           style={styles.input}
           placeholder="Confirm new password"
           placeholderTextColor="#B0B0B0"
-          secureTextEntry
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           onKeyPress={handleKeyPress}
