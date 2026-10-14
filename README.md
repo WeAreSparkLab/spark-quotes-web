@@ -2,6 +2,13 @@
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
+## Setup
+
+1. `npm install`
+2. Copy `.env.example` to `.env` and fill in your own values. `.env` is gitignored; never commit real keys.
+   Server-only values (`SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `FIREBASE_SERVICE_ACCOUNT`) belong in your hosting provider's environment settings, not in client code.
+3. `npx expo start`
+
 ## Get started
 
 1. Install dependencies
