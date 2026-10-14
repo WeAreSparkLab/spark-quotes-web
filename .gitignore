@@ -35,3 +35,9 @@ expo-env.d.ts
 
 # Supabase CLI link state (per-machine)
 supabase/.temp/
+
+# Secrets, dependencies
+.env
+.env.*
+!.env.example
+*.pem
