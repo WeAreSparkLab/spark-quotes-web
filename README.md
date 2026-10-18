@@ -1,57 +1,58 @@
-# Welcome to your Expo app 👋
+# Spark Quotes
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**A daily motivational quotes app with favourites, user-submitted quotes and push notifications.**
 
-## Setup
+**Live demo:** [quotes.wearesparklab.com](https://quotes.wearesparklab.com/)
 
-1. `npm install`
-2. Copy `.env.example` to `.env` and fill in your own values. `.env` is gitignored; never commit real keys.
-   Server-only values (`SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `FIREBASE_SERVICE_ACCOUNT`) belong in your hosting provider's environment settings, not in client code.
-3. `npx expo start`
+Built with Expo (React Native Web + TypeScript), Supabase and Vercel. It runs as an installable web app (PWA) and can also be built for iOS and Android.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Browse quotes by topic and save favourites to your account.
+- **Submit a quote:** submissions go through a moderation queue (Supabase Edge Function) before they're published.
+- **Daily push notifications** via Firebase Cloud Messaging, sent by an hourly Vercel cron job. Tokens are scoped per device, and deliveries are logged.
+- **SEO pages:** a build script generates static, crawlable pages for every approved quote and category (`/quotes`, `/quotes/<category>`, `/quote/<slug>`), because the app shell alone isn't indexable.
+- **Social previews:** dynamic Open Graph images generated with `@vercel/og`.
+- **Accounts:** email/password sign-up, password reset, and a delete-my-account function.
+- Optional supporter links and keys for people who want to tip.
 
-   ```bash
-   npm install
-   ```
+## Tech stack
 
-2. Start the app
+| Area | Tools |
+|---|---|
+| App | Expo SDK 53, React Native 0.79, React 19, TypeScript, expo-router |
+| Backend | Supabase: Postgres with RLS, Auth, Edge Functions (`submit-quote`, `redeem-support-key`) |
+| Notifications | Firebase Cloud Messaging, Vercel Cron and serverless routes in `api/` |
+| Hosting | Vercel (static web export, serverless functions, cron) |
 
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Run it locally
 
 ```bash
-npm run reset-project
+git clone https://github.com/WeAreSparkLab/spark-quotes-web.git
+cd spark-quotes-web
+npm install
+cp .env.example .env     # fill in your own values
+npx expo start --web
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Requires Node 24.x. In `.env`:
 
-## Learn more
+- **Client values** (`EXPO_PUBLIC_*`) are bundled into the app and are public by design. Use the Supabase anon/publishable key only.
+- **Server values** (`SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`, `FIREBASE_SERVICE_ACCOUNT`) belong only in your hosting provider's environment settings, never in client code.
 
-To learn more about developing your project with Expo, look at the following resources:
+Apply the SQL in `supabase/migrations/` to your own Supabase project to create the schema, RLS policies and notification tables.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Build and deploy
 
-## Join the community
+```bash
+npm run build:web   # expo export + post-build step (service worker version, SEO pages)
+```
 
-Join our community of developers creating universal apps.
+Vercel runs `vercel-build` automatically and registers the hourly notification cron from `vercel.json`. The build reads approved quotes from Supabase to generate the SEO pages.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## What I'd improve next
+
+- Add tests for the moderation flow and the notification scheduler.
+- Add an admin screen for approving or rejecting submitted quotes.
+- Move the cron-triggered notification logic into a queue so large audiences don't hit function time limits.
+- Rename the package (it still carries the starter template name) and tidy the dependency list.
