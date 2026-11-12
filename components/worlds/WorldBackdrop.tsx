@@ -131,14 +131,14 @@ function sunroom() {
 
 const PAINTERS: Record<WorldId, () => string> = { garden, lake, summit, sunroom };
 
-export default function WorldBackdrop({ world, settled = true }: { world: WorldId; settled?: boolean }) {
+export default function WorldBackdrop({ world, settled = true, painted = true }: { world: WorldId; settled?: boolean; painted?: boolean }) {
   // Painted lazily and once each; these are small strings, not images.
   const art = useMemo(() => {
-    if (Platform.OS !== "web") return null;
+    if (Platform.OS !== "web" || !painted) return null;
     const out = {} as Record<WorldId, string>;
     for (const id of WORLD_ORDER) out[id] = PAINTERS[id]();
     return out;
-  }, []);
+  }, [painted]);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none" aria-hidden>
@@ -162,9 +162,9 @@ export default function WorldBackdrop({ world, settled = true }: { world: WorldI
                   { backgroundImage: art[id], backgroundSize: "cover", backgroundPosition: "center bottom", backgroundRepeat: "no-repeat" } as any,
                 ]}
               />
-            ) : (
+            ) : painted ? (
               <View style={[styles.ground, { backgroundColor: cfg.ground }]} />
-            )}
+            ) : null}
           </View>
         );
       })}

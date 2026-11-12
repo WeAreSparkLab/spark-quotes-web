@@ -34,7 +34,6 @@ const SERIF = Platform.OS === "web" ? '"Newsreader", "Iowan Old Style", Georgia,
 const SANS = Platform.OS === "web" ? '"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif' : undefined;
 
 const ASK_KEY = "sparkMoodAsk"; // { day, answered }
-const STILL_KEY = "sparkStillMode"; // "1" | "0"
 const SHORT_NAME: Record<WorldId, string> = { garden: "Garden", lake: "Lake", summit: "Summit", sunroom: "Sunshine Room" };
 
 function today() {
@@ -101,7 +100,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [worldsOpen, setWorldsOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
-  const [still, setStill] = useState(false);
   const [prefsReady, setPrefsReady] = useState(false);
   const [no3D, setNo3D] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -117,23 +115,16 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
     getSlotHours().then((h) => setSlotCount(h.length)).catch(() => {});
 
     (async () => {
-      let wantStill = false;
       try {
-        const [ask, stored] = await Promise.all([AsyncStorage.getItem(ASK_KEY), AsyncStorage.getItem(STILL_KEY)]);
+        const ask = await AsyncStorage.getItem(ASK_KEY);
         const parsed = ask ? JSON.parse(ask) : null;
         setAskOpen(!(parsed?.day === today()));
-        if (stored === "1") wantStill = true;
-        else if (stored === null && Platform.OS === "web") {
-          // No stated preference: stay light for people who asked their
-          // browser to save data.
-          const nav = navigator as any;
-          if (nav.connection?.saveData || window.matchMedia?.("(prefers-reduced-data: reduce)").matches) wantStill = true;
-        }
       } catch {
         setAskOpen(true);
       }
+      // Reduced motion still gets the 3D world, drawn as a single still frame
+      // (the engine handles that); there is no separate still mode.
       if (Platform.OS === "web") setReduceMotion(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false);
-      setStill(wantStill);
       setPrefsReady(true);
     })();
   }, []);
@@ -221,12 +212,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
     if (Platform.OS === "web") window.location.assign(path);
   }, [quote?.category]);
 
-  const toggleStill = useCallback(async () => {
-    const next = !still;
-    setStill(next);
-    setStatus(next ? "Still mode on. The worlds are shown as paintings." : "Still mode off.");
-    try { await AsyncStorage.setItem(STILL_KEY, next ? "1" : "0"); } catch {}
-  }, [still]);
 
   // ── look ─────────────────────────────────────────────────────────────────
   const wide = width >= 900;
@@ -259,7 +244,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
       ? slotCount > 1 ? "Your quote right now" : "Your quote of the day"
       : cfg.name;
 
-  const use3D = prefsReady && !still && !no3D && Platform.OS === "web" && !q.loading;
+  const use3D = prefsReady && !no3D && Platform.OS === "web" && !q.loading;
   const anon = !!quote && /^(anonymous|unknown)$/i.test(quote.author.trim());
 
   return (
@@ -271,7 +256,9 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
         </Head>
       ) : null}
 
-      <WorldBackdrop world={q.world} />
+      {/* Sky colours while the 3D world loads or travels; the painted
+          version only where 3D can't run, so two art styles never swap */}
+      <WorldBackdrop world={q.world} painted={no3D || Platform.OS !== "web"} />
       {use3D ? <WorldCanvas world={q.world} onUnavailable={() => setNo3D(true)} handleRef={canvasHandle} /> : null}
       <View style={[StyleSheet.absoluteFill, ui.veil]} pointerEvents="none" />
 
@@ -331,10 +318,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                   {!q.isDaily ? <Pill quiet icon="today-outline" label="Today's quote" onPress={q.backToDaily} /> : null}
                   {Platform.OS === "web" ? (
                     <Pill quiet icon="book-outline" label={`All ${quote.category} quotes`} onPress={onCollection} />
-                  ) : null}
-                  {Platform.OS === "web" && !no3D ? (
-                    <Pill quiet icon={still ? "play-outline" : "pause-outline"} label={still ? "Bring the world to life" : "Still mode"} onPress={toggleStill}
-                      a11y={still ? "Turn on the animated 3D world" : "Turn on still mode: show the world as a painting, with no animation"} />
                   ) : null}
                   {hasTips ? <Pill quiet icon="cafe-outline" label="Support Spark Quotes" onPress={() => router.push("/settings")} /> : null}
                   <Pill quiet icon="albums-outline" label="Classic view" onPress={() => router.push("/classic" as any)} />
