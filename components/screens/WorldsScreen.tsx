@@ -14,7 +14,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { LINKS } from "../../utils/support";
 import Head from "expo-router/head";
 import { supabase } from "../../supabaseClient";
 import { useSupabase } from "../../app/_layout";
@@ -82,6 +83,14 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
   const router = useRouter();
   const { userId } = useSupabase();
   const q = useSparkQuotes();
+
+  // /?q=<quote id> — arriving from a public quote page or a shared link
+  const { q: linkedId } = useLocalSearchParams<{ q?: string }>();
+  const openQuote = q.openQuote;
+  useEffect(() => {
+    if (typeof linkedId === "string" && /^[A-Za-z0-9-]{1,64}$/.test(linkedId)) openQuote(linkedId);
+  }, [linkedId, openQuote]);
+  const hasTips = !!(LINKS.BMC_URL || LINKS.TIP_ANY || LINKS.TIP_5 || LINKS.TIP_10);
   const { width, height } = useWindowDimensions();
   const cfg = WORLDS[q.world];
   const quote = q.quote;
@@ -327,6 +336,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                     <Pill quiet icon={still ? "play-outline" : "pause-outline"} label={still ? "Bring the world to life" : "Still mode"} onPress={toggleStill}
                       a11y={still ? "Turn on the animated 3D world" : "Turn on still mode: show the world as a painting, with no animation"} />
                   ) : null}
+                  {hasTips ? <Pill quiet icon="cafe-outline" label="Support Spark Quotes" onPress={() => router.push("/settings")} /> : null}
                   <Pill quiet icon="albums-outline" label="Classic view" onPress={() => router.push("/classic" as any)} />
                   <Pill quiet icon="flag-outline" label={hasReported ? "Reported" : "Report"} onPress={onReport} disabled={hasReported} a11y="Report this quote as inappropriate" />
                 </View>

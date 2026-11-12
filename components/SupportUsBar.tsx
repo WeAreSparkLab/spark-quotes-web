@@ -58,10 +58,12 @@ export default function SupportUsBar() {
 
   if (Platform.OS !== "web" || !visible) return null;
   if (pathname?.startsWith("/settings")) return null; // Settings already has a support section
+  // The Living Worlds home keeps the scene clear; support lives in its
+  // "More" options there instead.
+  if (pathname === "/" || pathname === "") return null;
 
-  // Lift above the bottom nav on the home route
-  // (the Living Worlds home has a taller tray than the classic nav bar)
-  const bottom = pathname === "/" ? 210 : pathname === "/classic" ? 76 : 12;
+  // Lift above the bottom nav on the classic home
+  const bottom = pathname === "/classic" ? 76 : 12;
 
   return (
     <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">

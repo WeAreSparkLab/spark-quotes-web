@@ -204,7 +204,8 @@ ${crumbs(path)}
   <blockquote>&ldquo;${escapeHtml(quote.text)}&rdquo;</blockquote>
   <p class="author">— ${escapeHtml(quote.author)}</p>
   <div class="cta">
-    <a class="btn btn-primary" href="/">Get a quote like this every day</a>
+    <a class="btn btn-primary" href="/?q=${encodeURIComponent(quote.id)}">Open in Spark Quotes</a>
+    <a class="btn btn-ghost" href="/">Get a quote every day</a>
   </div>
 </div>
 ${

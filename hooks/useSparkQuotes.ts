@@ -47,6 +47,7 @@ export interface SparkQuotes {
   visitWorld(world: WorldId): Promise<void>;
   backToDaily(): void;
   refreshDaily(): Promise<void>;
+  openQuote(id: string): Promise<void>;
 }
 
 export function useSparkQuotes(): SparkQuotes {
@@ -196,6 +197,33 @@ export function useSparkQuotes(): SparkQuotes {
     setWorld(worldForCategory(daily.category));
   }, [daily]);
 
+  /**
+   * Show one specific quote — someone followed a link to it. Like moods,
+   * this never replaces the saved quote of the day.
+   */
+  const openQuote = useCallback(async (id: string) => {
+    if (!id || quoteRef.current?.id === id) return;
+    let found: Quote | null = null;
+    try {
+      const { data } = await supabase
+        .schema("quotes")
+        .from("approved_quotes")
+        .select("id, text, author, category")
+        .eq("id", id)
+        .maybeSingle();
+      if (data) found = data as Quote;
+    } catch {
+      /* offline */
+    }
+    if (!found) found = bundledQuotes.find((b) => b.id === id) ?? null;
+    if (!found) return; // unknown id: just carry on with today's quote
+    scopeRef.current = "topics";
+    setMood(null);
+    setQuote(found);
+    setWorld(worldForCategory(legacyCategoryMap[found.category] ?? found.category));
+    setLoading(false);
+  }, []);
+
   return {
     quote,
     world,
@@ -208,5 +236,6 @@ export function useSparkQuotes(): SparkQuotes {
     visitWorld,
     backToDaily,
     refreshDaily,
+    openQuote,
   };
 }
