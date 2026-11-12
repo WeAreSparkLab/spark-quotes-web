@@ -14,6 +14,9 @@ import { C, S } from '../../styles/theme';
 // utils/shareQuote.ts). Supabase needs this exact URL allow-listed under
 // Auth > URL Configuration > Redirect URLs, or the email link will bounce.
 const RESET_PASSWORD_REDIRECT_URL = 'https://quotes.wearesparklab.com/reset-password';
+// Where the "confirm your email" link lands. Must also be allow-listed in
+// Supabase (Auth > URL Configuration > Redirect URLs), or Supabase ignores it.
+const SIGNUP_REDIRECT_URL = 'https://quotes.wearesparklab.com/';
 
 export default function AuthScreen() {
   const router = useRouter();
@@ -58,6 +61,10 @@ export default function AuthScreen() {
         const { data, error } = await supabase.auth.signUp({
           email: email.trim(),
           password,
+          // Without this, the confirmation link falls back to the Supabase
+          // project's Site URL, which is shared with the SparkLab site, so
+          // new users were landing on SparkLab after confirming.
+          options: { emailRedirectTo: SIGNUP_REDIRECT_URL },
         });
         if (error) throw error;
 
