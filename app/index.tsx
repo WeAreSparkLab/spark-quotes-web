@@ -1,36 +1,22 @@
 // app/index.tsx
-import React from "react";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { ActivityIndicator, Text, StyleSheet, Platform } from "react-native";
-import IndexScreen from "../components/screens/IndexScreen";
-import { useSupabase } from "./_layout";
+//
+// Home: the Living Worlds experience.
+//
+// Deliberately does NOT wait for the Supabase session before rendering. The
+// quote is public and the screen works logged out, so there is no reason to
+// hold a visitor on a spinner; the save button simply picks up the session
+// when it arrives. The original home screen lives on at /classic.
+import React, { useState } from "react";
+import { Platform } from "react-native";
+import WorldsScreen from "../components/screens/WorldsScreen";
 import InstallPrompt from "../components/InstallPrompt";
 
-
 export default function App() {
-  const { supabaseInitialized } = useSupabase();
-
-  if (!supabaseInitialized) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#6672E7" />
-        <Text style={styles.loadingText}>Initializing app...</Text>
-      </SafeAreaView>
-    );
-  }
-console.log('[Index] supabaseInitialized =', supabaseInitialized);
-
+  const [bannerShowing, setBannerShowing] = useState(false);
   return (
-    <SafeAreaView style={styles.appContainer} edges={["top"]}>
-        <IndexScreen />
-       {Platform.OS === "web" ? <InstallPrompt /> : null}
-    </SafeAreaView >
+    <>
+      <WorldsScreen topInset={bannerShowing ? 84 : 0} />
+      {Platform.OS === "web" ? <InstallPrompt onVisibleChange={setBannerShowing} /> : null}
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  appContainer: { flex: 1, backgroundColor: "#0E0F1D" },
-  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0E0F1D" },
-  loadingText: { color: "#E0E0E0", marginTop: 10 },
-});
-

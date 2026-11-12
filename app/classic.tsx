@@ -1,0 +1,34 @@
+// app/classic.tsx
+//
+// The original home screen, kept reachable while the Living Worlds
+// experience is being reviewed. Nothing about it has changed.
+import React from "react";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator, Text, StyleSheet } from "react-native";
+import IndexScreen from "../components/screens/IndexScreen";
+import { useSupabase } from "./_layout";
+
+export default function Classic() {
+  const { supabaseInitialized } = useSupabase();
+
+  if (!supabaseInitialized) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#6672E7" />
+        <Text style={styles.loadingText}>Initializing app...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.appContainer} edges={["top"]}>
+      <IndexScreen />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  appContainer: { flex: 1, backgroundColor: "#0E0F1D" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#0E0F1D" },
+  loadingText: { color: "#E0E0E0", marginTop: 10 },
+});

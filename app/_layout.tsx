@@ -190,6 +190,14 @@ useEffect(() => {
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+          {/* Living Worlds typography — the same pair as SparkLab Worlds.
+              display=swap, so the quote is readable in Georgia straight away. */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+          />
           <style dangerouslySetInnerHTML={{
             __html: `
               html, body {
@@ -235,6 +243,7 @@ useEffect(() => {
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="classic" options={{ headerShown: false }} />
           <Stack.Screen name="settings" options={{ headerShown: false }} />
           <Stack.Screen name="submitQuote" options={{ headerShown: false }} />
           <Stack.Screen name="favorites" options={{ headerShown: false }} />

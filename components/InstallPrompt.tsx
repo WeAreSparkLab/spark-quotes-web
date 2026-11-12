@@ -7,10 +7,17 @@ declare global {
   interface Window { __deferredPWA?: any }
 }
 
-export default function InstallPrompt() {
+export default function InstallPrompt({ onVisibleChange }: { onVisibleChange?: (showing: boolean) => void } = {}) {
   const [eventRef, setEventRef] = useState<any>(null);
   const [visible, setVisible] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+
+  // The banner is fixed to the top of the window; let the screen underneath
+  // know when to leave room for it.
+  const showing = Platform.OS === "web" && !isStandalone && visible;
+  useEffect(() => {
+    onVisibleChange?.(showing);
+  }, [showing, onVisibleChange]);
 
   useEffect(() => {
   if (Platform.OS !== "web") return;
