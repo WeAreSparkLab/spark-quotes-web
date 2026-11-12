@@ -90,7 +90,7 @@ update quotes.approved_quotes set text = 'The world breaks every one and afterwa
   where author = 'Ernest Hemingway' and text = 'The world breaks everyone, and afterward, some are strong at the broken places.';
 update quotes.approved_quotes set author = 'Anonymous'
   where author = 'Hippocrates' and text = 'Let food be thy medicine and medicine be thy food.';
-update quotes.approved_quotes set author = 'Grapefruit (1964) (checked)', text = 'Yoko Ono'
+update quotes.approved_quotes set author = 'Yoko Ono'
   where author = 'John Lennon' and text = 'A dream you dream alone is only a dream. A dream you dream together is reality.';
 update quotes.approved_quotes set author = 'Anonymous'
   where author = 'John Lennon' and text = 'Count your age by friends, not years. Count your life by smiles, not tears.';

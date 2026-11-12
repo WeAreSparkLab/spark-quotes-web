@@ -308,7 +308,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                   a11y={!userId ? "Sign in to save this quote" : isFavorited ? "Remove from favourites" : "Save to favourites"}
                 />
                 <Pill icon="share-social-outline" label={isSharing ? "Preparing…" : "Share"} onPress={onShare} disabled={isSharing} a11y="Share this quote" />
-                <Pill icon="shuffle" label={q.busy ? "Finding…" : "Another"} onPress={q.another} disabled={q.busy} a11y="Show another quote" />
                 <Pill icon="ellipsis-horizontal" label={width < 430 ? "" : "More"} onPress={() => setMoreOpen((v) => !v)} a11y={moreOpen ? "Hide more options" : "More options"} on={moreOpen} />
               </View>
 
@@ -323,6 +322,23 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                   <Pill quiet icon="flag-outline" label={hasReported ? "Reported" : "Report"} onPress={onReport} disabled={hasReported} a11y="Report this quote as inappropriate" />
                 </View>
               ) : null}
+
+              {/* Today's quote is the centrepiece, so a new one is a quiet
+                  offer rather than a main button — but it's always there
+                  for a day when this one doesn't land. */}
+              <Pressable
+                onPress={q.another}
+                disabled={q.busy}
+                accessibilityRole="button"
+                accessibilityLabel="Show a different quote"
+                hitSlop={8}
+                style={({ pressed }) => [styles.tryAnother, { opacity: q.busy ? 0.5 : pressed ? 0.6 : 1 }]}
+              >
+                <Text style={[styles.tryAnotherText, ui.shadow, { color: ui.soft, fontFamily: SANS }]}>
+                  {q.busy ? "Finding one…" : "Not quite right? "}
+                  {q.busy ? null : <Text style={[styles.tryAnotherLink, { color: ui.ink }]}>Try another</Text>}
+                </Text>
+              </Pressable>
 
               {notice ? <Text accessibilityRole="alert" style={[styles.notice, { color: ui.ink, fontFamily: SANS }]}>{notice}</Text> : null}
 
@@ -451,6 +467,9 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 14, fontWeight: "600" },
   notice: { marginTop: 12, fontSize: 13.5, textAlign: "center", fontWeight: "500" },
+  tryAnother: { marginTop: 14, paddingVertical: 8, paddingHorizontal: 10, minHeight: 40, justifyContent: "center" },
+  tryAnotherText: { fontSize: 14, textAlign: "center" },
+  tryAnotherLink: { fontWeight: "600", textDecorationLine: "underline" },
   streak: { marginTop: 16, fontSize: 12.5, letterSpacing: 0.3 },
   loading: { fontSize: 22, fontStyle: "italic", marginTop: 60, textAlign: "center" },
   prompt: { width: "100%", maxWidth: 520, marginTop: 8 },
