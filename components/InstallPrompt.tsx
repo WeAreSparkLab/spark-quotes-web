@@ -1,6 +1,7 @@
 // components/InstallPrompt.tsx
 import React, { useEffect, useState } from "react";
 import { Platform, View, Text, TouchableOpacity } from "react-native";
+import { C, F } from "../styles/theme";
 
 // we'll stash the event on window so other screens (Settings) can use it
 declare global {
@@ -76,37 +77,37 @@ export default function InstallPrompt({ onVisibleChange }: { onVisibleChange?: (
   };
 
   return (
-    <View style={{ position: "fixed" as any, top: 0, left: 0, right: 0, zIndex: 30, alignItems: "center", paddingTop: 12, paddingHorizontal: 12, backgroundColor: "rgba(12, 10, 26, 0.95)", backdropFilter: "blur(10px)" } as any}>
+    <View style={{ position: "fixed" as any, top: 0, left: 0, right: 0, zIndex: 30, alignItems: "center", paddingTop: 12, paddingHorizontal: 12, backgroundColor: "transparent" } as any}>
       <View
         style={{
           width: "100%",
-          maxWidth: 980,
-          backgroundColor: "rgba(102, 114, 231, 0.15)",
-          borderColor: "rgba(102, 114, 231, 0.3)",
+          maxWidth: 640,
+          backgroundColor: "rgba(34, 28, 43, 0.95)",
+          borderColor: "rgba(247, 243, 237, 0.14)",
           borderWidth: 1,
-          borderRadius: 12,
-          paddingVertical: 12,
+          borderRadius: 18,
+          paddingVertical: 10,
           paddingHorizontal: 16,
           flexDirection: "row",
           alignItems: "center",
           gap: 12,
           flexWrap: "wrap",
           marginBottom: 12,
-          shadowColor: "#6672E7",
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.3,
-          shadowRadius: 8,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 6 },
+          shadowOpacity: 0.18,
+          shadowRadius: 16,
         } as any}
       >
-        <Text style={{ color: "#C9CCE3", flexShrink: 1 }}>
-          Install <Text style={{ fontWeight: "800", color: "#FFFFFF" }}>Spark Quotes</Text> for a full-screen experience.
+        <Text style={{ color: "#F7F3ED", flexShrink: 1, fontFamily: F.sans }}>
+          Add <Text style={{ fontWeight: "600" }}>Spark Quotes</Text> to your home screen
         </Text>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity onPress={handleInstall} style={{ backgroundColor: "#6672E7", paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, shadowColor: "#6672E7", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.4, shadowRadius: 4 }}>
-          <Text style={{ color: "#fff", fontWeight: "700", fontSize: 15 }}>Install</Text>
+        <TouchableOpacity onPress={handleInstall} accessibilityRole="button" style={{ backgroundColor: C.gold, paddingVertical: 9, paddingHorizontal: 18, borderRadius: 999 }}>
+          <Text style={{ color: C.ink, fontWeight: "600", fontSize: 15, fontFamily: F.sans }}>Install</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleClose} style={{ marginLeft: 6, padding: 6 }}>
-          <Text style={{ color: "#A6ACC9" }}>✕</Text>
+        <TouchableOpacity onPress={handleClose} accessibilityRole="button" accessibilityLabel="Dismiss install banner" style={{ marginLeft: 2, padding: 6 }}>
+          <Text style={{ color: "#CFC5D9" }}>✕</Text>
         </TouchableOpacity>
       </View>
     </View>

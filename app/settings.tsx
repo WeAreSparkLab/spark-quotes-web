@@ -17,12 +17,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import Ionicons from '@expo/vector-icons/Ionicons';
+import { Ionicons } from "../components/common/Ionicons";
+import PageHeader from "../components/common/PageHeader";
+import { C, S } from "../styles/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Switch from "../components/common/Switch";
 import { supabase } from "../supabaseClient";
 import { useSupabase } from "./_layout";
-import SupportSection from '../components/SupportSection'
 import { shareApp } from "../utils/shareApp";
 import { openCoffee, openTipChooser, getStripeCTA } from "../utils/support";
 import { LINKS } from "../utils/support";
@@ -92,7 +93,7 @@ function InstallAppRow() {
           <Text style={styles.logoutButtonText}>Install</Text>
         </TouchableOpacity>
       ) : (
-        <Text style={{ color: "#BFC4D6" }}>
+        <Text style={styles.installNote}>
           {isiOSWeb
             ? "On iPhone: Share → Add to Home Screen."
             : "If the button isn’t visible, you may already have installed it."}
@@ -444,414 +445,215 @@ export default function Settings() {
   // Render
   // -----------------------------
 
+  const Chip = ({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) => (
+    <Pressable
+      onPress={onPress}
+      role="checkbox"
+      aria-checked={on}
+      accessibilityLabel={label}
+      style={({ pressed }) => [S.chip, on && S.chipOn, { opacity: pressed ? 0.75 : 1 }]}
+    >
+      <Text style={[S.chipText, on && S.chipTextOn]}>{label}</Text>
+    </Pressable>
+  );
+
+  const Button = ({ label, onPress, kind = "ghost", busy, disabled }: {
+    label: string; onPress: () => void; kind?: "primary" | "ghost" | "danger"; busy?: boolean; disabled?: boolean;
+  }) => (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled || busy}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        S.btn,
+        kind === "primary" ? S.btnPrimary : kind === "danger" ? styles.btnDanger : S.btnGhost,
+        { opacity: disabled || busy ? 0.6 : pressed ? 0.85 : 1 },
+      ]}
+    >
+      {busy ? (
+        <ActivityIndicator color={kind === "primary" ? C.onAccent : C.ink} />
+      ) : (
+        <Text style={kind === "primary" ? S.btnPrimaryText : kind === "danger" ? styles.btnDangerText : S.btnGhostText}>{label}</Text>
+      )}
+    </Pressable>
+  );
+
+  const hasTips = !!(LINKS.BMC_URL || LINKS.TIP_ANY || LINKS.TIP_5 || LINKS.TIP_10);
+
   return (
-    <SafeAreaView style={styles.settingsContainer}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={goBackOrHome} style={styles.backButton} hitSlop={{ top: 10, left: 10, right: 10, bottom: 10 }}>
-          <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
-        </TouchableOpacity>
-        <Text style={styles.title}>Settings</Text>
-      </View>
+    <SafeAreaView style={S.page}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
+        <PageHeader title="Settings" onBack={goBackOrHome} />
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[styles.scrollView, { paddingBottom: 40 }]}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Notifications */}
-        <View style={styles.settingCard}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.settingLabel}>Enable Notifications</Text>
-            <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: "#D1D5DB", true: "#6672E7" }}
-              thumbColor={"#FFFFFF"}
-            />
-          </View>
-        </View>
-
-        {/* When to send — the number of slots chosen is the daily frequency */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>When to send</Text>
-          <Text style={{ color: "#BFC4D6", fontSize: 13, marginBottom: 12 }}>
-            {selectedTimes.length <= 1
-              ? "One quote a day. Add more times if you'd like extra."
-              : `${selectedTimes.length} quotes a day.`}
-          </Text>
-          <View style={styles.optionsRow}>
-            {timeOptions.map((option) => (
-              <TouchableOpacity
-                key={option}
-                style={[
-                  styles.optionButton,
-                  selectedTimes.includes(option) && styles.selectedOption,
-                ]}
-                onPress={() => toggleTime(option)}
-              >
-                <Text
-                  style={[
-                    styles.optionText,
-                    selectedTimes.includes(option) && styles.selectedOptionText,
-                  ]}
-                >
-                  {option}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Active Days */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>Active Days</Text>
-          <View className="days" style={styles.daysContainer}>
-            {dayOptions.map((day) => (
-              <TouchableOpacity
-                key={day}
-                style={[
-                  styles.dayButton,
-                  selectedDays.includes(day) && styles.selectedDay,
-                ]}
-                onPress={() => toggleDay(day)}
-              >
-                <Text
-                  style={[
-                    styles.dayText,
-                    selectedDays.includes(day) && styles.selectedDayText,
-                  ]}
-                >
-                  {day}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Save Changes Button */}
-        <View style={styles.settingCard}>
-          <TouchableOpacity
-            style={[styles.saveButton, saving && { opacity: 0.7 }]}
-            onPress={handleSaveChanges}
-            disabled={saving}
-          >
-            <Text style={styles.saveButtonText}>{saving ? "Saving..." : "Save Changes"}</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Legal */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>Legal</Text>
-          <TouchableOpacity style={styles.linkButton} onPress={openPrivacy}>
-            <Text style={styles.linkButtonText}>Privacy Policy</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Account */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>Account</Text>
-
-          {session ? (
-            <>
-              <TouchableOpacity
-                style={styles.logoutButton}
-                onPress={handleLogout}
-                disabled={deleting}
-              >
-                <Text style={styles.logoutButtonText}>Logout</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={confirmDelete}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <ActivityIndicator color="#FFFFFF" />
-                ) : (
-                  <Text style={styles.deleteButtonText}>Delete Account</Text>
-                )}
-              </TouchableOpacity>
-            </>
-          ) : (
-            <TouchableOpacity style={styles.loginButton} onPress={handleSignIn}>
-              <Text style={styles.loginButtonText}>Sign In / Create Account</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {/* Support call-to-actions */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>Support Spark</Text>
-          <Text style={{ color: "#BFC4D6", marginBottom: 10 }}>
-            We’re a tiny family business in the UK. If Spark Quotes brightens your day,
-            you can keep it going with a tip 💛
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.linkButton, { backgroundColor: "#F7BE38", marginBottom: 8 }]}
-            onPress={openCoffee}
-          >
-            <Text style={{ color: "#1a1a1a", fontWeight: "800" }}>
-              Buy us a coffee ☕
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.linkButton, { backgroundColor: "#6672E7" }]}
-            onPress={openTipChooser}
-          >
-            <Text style={{ color: "#fff", fontWeight: "800" }}>
-              {getStripeCTA()}
-            </Text>
-          </TouchableOpacity>
-          {/* --- Web-only quick amounts --- */}
-          {Platform.OS === "web" && (LINKS.TIP_5 || LINKS.TIP_10 || LINKS.TIP_ANY) ? (
-            <View style={styles.quickRow}>
-              {LINKS.TIP_5 ? (
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(LINKS.TIP_5)}
-                  style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.08)" }]}
-                >
-                  <Text style={styles.quickText}>Tip £5</Text>
-                </TouchableOpacity>
-              ) : null}
-              {LINKS.TIP_10 ? (
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(LINKS.TIP_10)}
-                  style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.08)" }]}
-                >
-                  <Text style={styles.quickText}>Tip £10</Text>
-                </TouchableOpacity>
-              ) : null}
-              {LINKS.TIP_ANY ? (
-                <TouchableOpacity
-                  onPress={() => Linking.openURL(LINKS.TIP_ANY)}
-                  style={[styles.quickBtn, { backgroundColor: "rgba(255,255,255,0.08)" }]}
-                >
-                  <Text style={styles.quickText}>Custom</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ) : null}
-        </View>
-
-        {/* Supporter status / Redeem */}
-        {SUPPORTER_KEYS_ENABLED && (
-          <View style={styles.settingCard}>
-            <Text style={styles.sectionTitle}>Supporter Status</Text>
-            {isSupporter ? (
-              <View
-                style={{
-                  padding: 10,
-                  borderRadius: 8,
-                  backgroundColor: "rgba(46, 204, 113, 0.15)",
-                  borderColor: "#2ecc71",
-                  borderWidth: 1,
-                }}
-              >
-                <Text style={{ color: "#2ecc71", fontWeight: "800" }}>
-                  Supporter ✓
-                </Text>
-                <Text style={{ color: "#CFE9D8" }}>
-                  Thank you for supporting a small family business!
-                </Text>
+        <View style={S.column}>
+          {/* Reminders */}
+          <Text style={[S.eyebrow, styles.group]}>Daily reminders</Text>
+          <View style={S.card}>
+            <View style={styles.rowBetween}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Text style={S.label}>Send me a quote</Text>
+                <Text style={[S.body, { marginTop: 2 }]}>A gentle notification with a fresh quote.</Text>
               </View>
+              <Switch
+                value={notificationsEnabled}
+                onValueChange={setNotificationsEnabled}
+                trackColor={{ false: "#D8D0DF", true: C.accent }}
+                thumbColor={"#FFFFFF"}
+              />
+            </View>
+
+            <View style={[styles.divider, !notificationsEnabled && { opacity: 0.5 }]} />
+
+            <View style={!notificationsEnabled ? { opacity: 0.5 } : null} pointerEvents={notificationsEnabled ? "auto" : "none"}>
+              <Text style={S.label}>When</Text>
+              <Text style={[S.body, styles.help]}>
+                {selectedTimes.length <= 1
+                  ? "One quote a day. Add more times if you'd like extra."
+                  : `${selectedTimes.length} quotes a day.`}
+              </Text>
+              <View style={styles.chips}>
+                {timeOptions.map((option) => (
+                  <Chip key={option} label={option} on={selectedTimes.includes(option)} onPress={() => toggleTime(option)} />
+                ))}
+              </View>
+
+              <Text style={[S.label, { marginTop: 18 }]}>Which days</Text>
+              <View style={[styles.chips, { marginTop: 10 }]}>
+                {dayOptions.map((day) => (
+                  <Chip key={day} label={day} on={selectedDays.includes(day)} onPress={() => toggleDay(day)} />
+                ))}
+              </View>
+            </View>
+
+            <View style={{ marginTop: 20 }}>
+              <Button label={saving ? "Saving…" : "Save reminders"} kind="primary" onPress={handleSaveChanges} disabled={saving} />
+            </View>
+          </View>
+
+          {/* Account */}
+          <Text style={[S.eyebrow, styles.group]}>Account</Text>
+          <View style={S.card}>
+            {session ? (
+              <>
+                {session.user?.email ? <Text style={[S.body, { marginBottom: 14 }]}>Signed in as {session.user.email}</Text> : null}
+                <Button label="Sign out" onPress={handleLogout} disabled={deleting} />
+                <View style={[styles.divider, { marginVertical: 18 }]} />
+                <Text style={S.label}>Delete account</Text>
+                <Text style={[S.body, styles.help]}>Permanently removes your account, favourites and reminder settings. This can't be undone.</Text>
+                <Button label="Delete my account" kind="danger" onPress={confirmDelete} busy={deleting} />
+              </>
             ) : (
               <>
-                <Text style={{ color: "#BFC4D6", marginBottom: 8 }}>
-                  Already tipped? Redeem your Supporter key:
-                </Text>
-                <TextInput
-                  style={[styles.input, { marginBottom: 10 }]}
-                  placeholder="Enter Supporter key (e.g., SPARK-ABCD-1234)"
-                  placeholderTextColor="#9AA3B2"
-                  value={code}
-                  onChangeText={setCode}
-                  autoCapitalize="characters"
-                />
-                <TouchableOpacity
-                  style={[styles.logoutButton, { backgroundColor: "#22c55e" }]}
-                  onPress={redeemKey}
-                  disabled={redeeming}
-                >
-                  {redeeming ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={styles.logoutButtonText}>Redeem Key</Text>
-                  )}
-                </TouchableOpacity>
+                <Text style={[S.body, { marginBottom: 14 }]}>An account lets you save favourites and get daily reminders.</Text>
+                <Button label="Sign in or create an account" kind="primary" onPress={handleSignIn} />
               </>
             )}
           </View>
-        )}
-        <Pressable onPress={shareApp}><Text>Share</Text></Pressable>
 
-        <InstallAppRow />
-        {/* App updates */}
-        <View style={styles.settingCard}>
-          <Text style={styles.sectionTitle}>App updates</Text>
+          {/* Support */}
+          {hasTips || SUPPORTER_KEYS_ENABLED ? (
+            <>
+              <Text style={[S.eyebrow, styles.group]}>Support Spark Quotes</Text>
+              <View style={[S.card, styles.supportCard]}>
+                <Text style={S.h2}>Made by a small family business</Text>
+                <Text style={[S.body, styles.help]}>
+                  Spark Quotes is free, with no ads. If it brightens your day, a tip helps keep it that way.
+                </Text>
+                <View style={styles.chips}>
+                  {LINKS.BMC_URL ? (
+                    <Pressable onPress={openCoffee} accessibilityRole="button" style={({ pressed }) => [S.btn, styles.btnGold, { opacity: pressed ? 0.85 : 1 }]}>
+                      <Text style={styles.btnGoldText}>Buy us a coffee</Text>
+                    </Pressable>
+                  ) : null}
+                  {LINKS.TIP_ANY || LINKS.TIP_5 || LINKS.TIP_10 ? (
+                    Platform.OS === "web" ? (
+                      <>
+                        {LINKS.TIP_5 ? <Button label="Tip £5" onPress={() => Linking.openURL(LINKS.TIP_5)} /> : null}
+                        {LINKS.TIP_10 ? <Button label="Tip £10" onPress={() => Linking.openURL(LINKS.TIP_10)} /> : null}
+                        {LINKS.TIP_ANY ? <Button label="Choose an amount" onPress={() => Linking.openURL(LINKS.TIP_ANY)} /> : null}
+                      </>
+                    ) : (
+                      <Button label={getStripeCTA()} onPress={openTipChooser} />
+                    )
+                  ) : null}
+                </View>
 
-          <TouchableOpacity
-            style={[styles.logoutButton, refreshing && { opacity: 0.7 }]}
-            onPress={refreshApp}
-            disabled={refreshing}
-          >
-            {refreshing ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.logoutButtonText}>Refresh app</Text>
-            )}
-          </TouchableOpacity>
+                {SUPPORTER_KEYS_ENABLED ? (
+                  <View style={{ marginTop: 18 }}>
+                    <View style={[styles.divider, { marginBottom: 18 }]} />
+                    {isSupporter ? (
+                      <View style={styles.supporter}>
+                        <Text style={[S.label, { color: C.success }]}>You're a supporter. Thank you!</Text>
+                        <Text style={[S.body, { marginTop: 4 }]}>It means a great deal to a small family business.</Text>
+                      </View>
+                    ) : (
+                      <>
+                        <Text style={S.label}>Already tipped?</Text>
+                        <Text style={[S.body, styles.help]}>Enter your supporter key to say hello.</Text>
+                        <TextInput
+                          style={[S.input, { marginBottom: 10 }]}
+                          placeholder="e.g. SPARK-ABCD-1234"
+                          placeholderTextColor={C.inkSoft}
+                          value={code}
+                          onChangeText={setCode}
+                          autoCapitalize="characters"
+                          aria-label="Supporter key"
+                        />
+                        <Button label="Redeem key" onPress={redeemKey} busy={redeeming} />
+                      </>
+                    )}
+                  </View>
+                ) : null}
+              </View>
+            </>
+          ) : null}
 
-          <Text style={{ color: "#BFC4D6", marginTop: 8 }}>
-            Checks for an update and reloads the app.
-          </Text>
+          {/* The app */}
+          <Text style={[S.eyebrow, styles.group]}>The app</Text>
+          <View style={S.card}>
+            <Pressable onPress={shareApp} accessibilityRole="button" style={styles.row}>
+              <Text style={S.label}>Share Spark Quotes</Text>
+              <Ionicons name="share-outline" size={19} color={C.ink} />
+            </Pressable>
+            <View style={styles.divider} />
+            <Pressable onPress={openPrivacy} accessibilityRole="link" style={styles.row}>
+              <Text style={S.label}>Privacy policy</Text>
+              <Ionicons name="open-outline" size={18} color={C.ink} />
+            </Pressable>
+            <View style={styles.divider} />
+            <Pressable onPress={refreshApp} disabled={refreshing} accessibilityRole="button" style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={S.label}>{refreshing ? "Checking…" : "Check for updates"}</Text>
+                <Text style={[S.body, { fontSize: 13 }]}>Fetches the latest version and reloads.</Text>
+              </View>
+              {refreshing ? <ActivityIndicator color={C.ink} /> : <Ionicons name="refresh" size={19} color={C.ink} />}
+            </Pressable>
+          </View>
+
+          <InstallAppRow />
         </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-
 const styles = StyleSheet.create({
-  settingsContainer: { flex: 1, backgroundColor: "#0E0F1D" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  backButton: { marginRight: 16 },
-  title: { fontSize: 22, fontWeight: "bold", color: "#FFFFFF" },
-  scrollView: { paddingHorizontal: 15, paddingBottom: 20 },
-
-  settingCard: {
-    backgroundColor: "#222034",
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 10,
-  },
-  rowBetween: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-
-  settingLabel: { fontSize: 16, fontWeight: "600", color: "#E0E0E0" },
-  sectionTitle: { fontSize: 16, fontWeight: "600", color: "#E0E0E0", marginBottom: 12 },
-
-  optionsRow: { flexDirection: "row", justifyContent: "space-around" },
-  optionButton: {
-    backgroundColor: "#4D637D",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    minWidth: 40,
-    alignItems: "center",
-    marginHorizontal: 4,
-  },
-  selectedOption: { backgroundColor: "#6672E7" },
-  optionText: { fontSize: 14, fontWeight: "600", color: "#B0B0B0" },
-  selectedOptionText: { color: "#FFFFFF" },
-
-  daysContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start" },
-  dayButton: {
-    backgroundColor: "#4D637D",
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    marginBottom: 8,
-    marginRight: 8,
-    minWidth: 40,
-    alignItems: "center",
-  },
-  selectedDay: { backgroundColor: "#6672E7" },
-  dayText: { fontSize: 12, fontWeight: "600", color: "#B0B0B0" },
-  selectedDayText: { color: "#FFFFFF" },
-
-  saveButton: {
-    backgroundColor: "#6672E7",
-    padding: 12,
-    borderRadius: 10,
-    alignItems: "center",
-    minHeight: 48,
-    justifyContent: "center",
-  },
-  saveButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
-
-  loginButton: {
-    backgroundColor: "#4D637D",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  loginButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
-
-  logoutButton: {
-    backgroundColor: "#6672E7",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-    marginTop: 4,
-  },
-  logoutButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
-
-  testButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-  },
-  testButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "600" },
-
-  linkButton: {
-    backgroundColor: "rgba(255,255,255,0.06)",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-  },
-  linkButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "600" },
-
-  deleteButton: {
-    backgroundColor: "#E63946",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  deleteButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
-
-  input: {
-    backgroundColor: "#333045",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    color: "#FFFFFF",
-    borderColor: "#4D637D",
-    borderWidth: 1,
-  },
-  quickRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,          // RN Web supports gap; if you prefer, remove and use margins below
-    marginTop: 10,
-    alignItems: "center",
-
-  },
-  quickBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    marginRight: 8,  // keep spacing even if gap unsupported
-    marginBottom: 8,
-  },
-  quickText: {
-    color: "#E6E7F2",
-    fontWeight: "700",
-    fontSize: 14,
-  },
+  group: { marginTop: 14, marginBottom: 10, marginLeft: 4 },
+  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", minHeight: 48, gap: 12 },
+  divider: { height: 1, backgroundColor: C.line, marginVertical: 14 },
+  help: { marginTop: 4, marginBottom: 12 },
+  chips: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  btnDanger: { backgroundColor: C.dangerWash, borderWidth: 1, borderColor: "rgba(168, 66, 58, 0.35)" },
+  btnDangerText: { ...S.btnGhostText, color: C.danger },
+  btnGold: { backgroundColor: C.gold },
+  btnGoldText: { ...S.btnGhostText, color: C.ink },
+  supportCard: { backgroundColor: "#FBF3E4", borderColor: "rgba(231, 197, 140, 0.55)" },
+  supporter: { padding: 14, borderRadius: 14, backgroundColor: C.successWash },
+  // used by InstallAppRow
+  settingCard: { ...S.card },
+  sectionTitle: { ...S.label, marginBottom: 10 },
+  logoutButton: { ...S.btn, ...S.btnPrimary },
+  logoutButtonText: S.btnPrimaryText,
+  installNote: { ...S.body },
 });

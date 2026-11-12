@@ -1,9 +1,8 @@
 // components/screens/SubmitQuoteScreen.tsx
 import React, { useState, useEffect } from 'react';
-import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  ScrollView, ActivityIndicator, Alert
-} from 'react-native';
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import PageHeader from '../common/PageHeader';
+import { C, F, S } from '../../styles/theme';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { supabase } from '../../supabaseClient';
@@ -104,183 +103,99 @@ export default function SubmitQuoteScreen() {
   };
 
 
+  const ok = message.startsWith('Quote submitted');
+  const pending = message === 'Submitting quote...';
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleGoBack} style={styles.backButton}>
-          <Text style={{ color: '#FFFFFF' }}>Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>Submit Your Quote</Text>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.formContainer}>
-        {!isLoggedIn && (
-          <Text style={styles.bannerText}>
-            You’re not signed in.{' '}
-            <Text onPress={() => router.push('/auth')} style={styles.bannerLink}>
-              Sign in to submit
-            </Text>
-            .
-          </Text>
-        )}
-
-        <Text style={styles.label}>Quote Text:</Text>
-        <TextInput
-          style={[styles.input, { minHeight: 100 }]} // Taller input for the quote
-          multiline
-          placeholder="Enter your inspiring quote here..."
-          placeholderTextColor="#CCCCCC"
-          value={quoteText}
-          onChangeText={setQuoteText}
+    <SafeAreaView style={S.page}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        <PageHeader
+          title="Share a quote"
+          subtitle="Know one that lifts you? Send it in. Every quote is read by a person before it appears in the app."
+          onBack={handleGoBack}
         />
 
-        <Text style={styles.label}>Author:</Text>
-        <TextInput
-          style={styles.input} // Standard height for the author
-          placeholder="Who said it? (e.g., Anonymous)"
-          placeholderTextColor="#CCCCCC"
-          value={quoteAuthor}
-          onChangeText={setQuoteAuthor}
-        />
-
-        <Text style={styles.label}>Category:</Text>
-        <View style={styles.categoryPicker}>
-          {allCategories.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[
-                styles.categoryButton,
-                selectedCategory === cat && styles.selectedCategoryButton,
-              ]}
-              onPress={() => setSelectedCategory(cat)}
-            >
-              <Text style={[
-                styles.categoryButtonText,
-                selectedCategory === cat && styles.selectedCategoryButtonText,
-              ]}>
-                {cat}
+        <View style={S.column}>
+          {!isLoggedIn && (
+            <View style={[S.card, styles.notice]}>
+              <Text style={S.body}>
+                You'll need to be signed in to send a quote.{' '}
+                <Text onPress={() => router.push('/auth')} style={S.link} accessibilityRole="link">Sign in</Text>
               </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {message ? <Text style={styles.message}>{message}</Text> : null}
-
-        <TouchableOpacity
-          style={styles.submitButton}
-          onPress={handleSubmitQuote}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={styles.submitButtonText}>
-              Submit Quote for Review
-            </Text>
+            </View>
           )}
-        </TouchableOpacity>
+
+          <View style={S.card}>
+            <Text style={[S.label, styles.label]} nativeID="q-text">The quote</Text>
+            <TextInput
+              style={[S.input, styles.multiline]}
+              multiline
+              maxLength={500}
+              placeholder="Type it exactly as it was said"
+              placeholderTextColor={C.inkSoft}
+              value={quoteText}
+              onChangeText={setQuoteText}
+              accessibilityLabelledBy="q-text"
+              aria-label="The quote"
+            />
+            <Text style={styles.count}>{quoteText.length}/500</Text>
+
+            <Text style={[S.label, styles.label]} nativeID="q-author">Who said it?</Text>
+            <TextInput
+              style={S.input}
+              maxLength={120}
+              placeholder="Their name, or Anonymous if you're not sure"
+              placeholderTextColor={C.inkSoft}
+              value={quoteAuthor}
+              onChangeText={setQuoteAuthor}
+              accessibilityLabelledBy="q-author"
+              aria-label="Who said it?"
+            />
+            <Text style={[S.body, styles.hint]}>Please only credit someone if you're confident they said it.</Text>
+
+            <Text style={[S.label, styles.label]}>Topic</Text>
+            <View style={styles.chips} role="radiogroup" aria-label="Topic">
+              {allCategories.map((cat) => {
+                const on = selectedCategory === cat;
+                return (
+                  <Pressable
+                    key={cat}
+                    role="radio"
+                    aria-checked={on}
+                    onPress={() => setSelectedCategory(cat)}
+                    style={({ pressed }) => [S.chip, on && S.chipOn, { opacity: pressed ? 0.75 : 1 }]}
+                  >
+                    <Text style={[S.chipText, on && S.chipTextOn]}>{cat}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {message && !pending ? (
+            <Text accessibilityRole="alert" style={[S.body, styles.message, { color: ok ? C.success : C.danger }]}>{message}</Text>
+          ) : null}
+
+          <Pressable
+            onPress={handleSubmitQuote}
+            disabled={isSubmitting}
+            accessibilityRole="button"
+            style={({ pressed }) => [S.btn, S.btnPrimary, { opacity: isSubmitting ? 0.7 : pressed ? 0.85 : 1 }]}
+          >
+            {isSubmitting ? <ActivityIndicator color={C.onAccent} /> : <Text style={S.btnPrimaryText}>Send for review</Text>}
+          </Pressable>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0E0F1D',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 20, 
-    paddingBottom: 10,
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-  },
-  formContainer: {
-    paddingHorizontal: 20, 
-    paddingBottom: 20,
-  },
-  bannerText: { 
-    color: '#FFD700', 
-    textAlign: 'center', 
-    marginBottom: 10 
-  },
-  bannerLink: { 
-    color: '#8EA0FF', 
-    textDecorationLine: 'underline' 
-  },
-  label: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: '#E0E0E0', 
-    marginBottom: 6, 
-    marginTop: 12 
-  },
-  input: {
-    backgroundColor: '#222034',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#FFFFFF',
-    minHeight: 40,
-    marginBottom: 12,
-    borderColor: '#4D637D',
-    borderWidth: 1,
-  },
-  categoryPicker: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-    marginBottom: 12,
-  },
-  categoryButton: {
-    backgroundColor: '#4D637D',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: 'transparent',
-  },
-  selectedCategoryButton: {
-    backgroundColor: '#6672E7',
-    borderColor: '#6672E7',
-  },
-  categoryButtonText: {
-    color: '#E0E0E0',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  selectedCategoryButtonText: {
-    color: '#FFFFFF',
-  },
-  message: {
-    fontSize: 14,
-    color: '#FFD700',
-    textAlign: 'center',
-    marginTop: 8,
-    marginBottom: 8,
-  },
-  submitButton: {
-    backgroundColor: '#6672E7',
-    borderRadius: 10, 
-    padding: 12,
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  submitButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16, 
-    fontWeight: 'bold',
-  },
+  notice: { backgroundColor: C.accentWash, borderColor: 'transparent' },
+  label: { marginBottom: 8, marginTop: 14 },
+  multiline: { minHeight: 110, textAlignVertical: 'top', fontFamily: F.serif, fontSize: 18, lineHeight: 25 },
+  count: { fontFamily: F.sans, fontSize: 12, color: C.inkSoft, alignSelf: 'flex-end', marginTop: 6 },
+  hint: { fontSize: 13, marginTop: 8 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 7 },
+  message: { textAlign: 'center', marginBottom: 12, fontWeight: '600' },
 });

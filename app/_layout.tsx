@@ -158,7 +158,7 @@ useEffect(() => {
       <SupabaseContext.Provider value={{ supabaseInitialized, session, userId }}>
         <Head>
           <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
-          <meta name="theme-color" content="#0E0F1D" />
+          <meta name="theme-color" content="#F7F3ED" />
           {/* Google Search Console ownership verification — must stay in the
               served HTML or the property silently loses verification. */}
           <meta name="google-site-verification" content="621BkybwhnFbLzAG7YjO-oewxOlO7idlFUjP_c7M_Us" />
@@ -234,12 +234,12 @@ useEffect(() => {
           screenOptions={{
             statusBarTranslucent: false,
             statusBarStyle: "light",
-            contentStyle: { backgroundColor: "#0C0A1A" },
+            contentStyle: { backgroundColor: "#F7F3ED" },
             headerTransparent: false,
-            headerStyle: { backgroundColor: "#0C0A1A" },
+            headerStyle: { backgroundColor: "#F7F3ED" },
             headerShadowVisible: false,
-            headerTintColor: "#FFFFFF",
-            headerTitleStyle: { color: "#FFFFFF", fontWeight: "800" },
+            headerTintColor: "#30283C",
+            headerTitleStyle: { color: "#30283C", fontWeight: "600" },
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -247,6 +247,7 @@ useEffect(() => {
           <Stack.Screen name="settings" options={{ headerShown: false }} />
           <Stack.Screen name="submitQuote" options={{ headerShown: false }} />
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
+          <Stack.Screen name="topics" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
           <Stack.Screen name="reset-password" options={{ headerShown: false }} />
         </Stack>
@@ -259,6 +260,6 @@ useEffect(() => {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
-    backgroundColor: '#0E0F1D',
+    backgroundColor: '#F7F3ED',
   },
 });

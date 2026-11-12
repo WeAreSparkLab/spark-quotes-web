@@ -12,6 +12,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Ionicons } from "./common/Ionicons";
 import { canAskForNotifications, notificationPermission, requestAndSubscribeFCM } from "../lib/fcmHelper";
 import { trackEvent } from "../utils/analytics";
+import { C, S } from "../styles/theme";
 
 const DISMISSED_KEY = "notificationPromptDismissed";
 
@@ -76,7 +77,7 @@ export default function NotificationPrompt({ userId }: { userId: string | null }
   return (
     <View style={styles.card}>
       <View style={styles.headingRow}>
-        <Ionicons name="notifications-outline" size={18} color="#6672E7" />
+        <Ionicons name="notifications-outline" size={18} color={C.accent} />
         <Text style={styles.heading}>A quote each morning?</Text>
       </View>
 
@@ -112,33 +113,22 @@ export default function NotificationPrompt({ userId }: { userId: string | null }
 }
 
 const styles = StyleSheet.create({
+  // Solid paper, so it reads the same over every world
   card: {
-    marginTop: 18,
-    marginHorizontal: Platform.OS === "web" ? 15 : 0,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: "rgba(102, 114, 231, 0.12)",
+    marginTop: 22,
+    padding: 18,
+    borderRadius: 20,
+    backgroundColor: "rgba(252, 250, 246, 0.96)",
     borderWidth: 1,
-    borderColor: "rgba(102, 114, 231, 0.32)",
+    borderColor: C.line,
   },
   headingRow: { flexDirection: "row", alignItems: "center", gap: 8 },
-  heading: { color: "#FFFFFF", fontWeight: "800", fontSize: 16 },
-  body: { color: "#BFC4D6", fontSize: 13, lineHeight: 19, marginTop: 8 },
-  error: { color: "#FFB3B8", fontSize: 13, lineHeight: 19, marginTop: 10 },
-  actions: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 14,
-  },
-  secondary: { paddingVertical: 10, paddingHorizontal: 14, borderRadius: 10 },
-  secondaryText: { color: "#A6ACC9", fontWeight: "700", fontSize: 14 },
-  primary: {
-    paddingVertical: 10,
-    paddingHorizontal: 18,
-    borderRadius: 10,
-    backgroundColor: "#6672E7",
-  },
-  primaryText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
+  heading: { ...S.h2, fontSize: 19 },
+  body: { ...S.body, fontSize: 14, marginTop: 6 },
+  error: { ...S.body, color: C.danger, fontSize: 13.5, marginTop: 10 },
+  actions: { flexDirection: "row", justifyContent: "flex-end", alignItems: "center", gap: 8, marginTop: 14 },
+  secondary: { ...S.btn, minHeight: 42, paddingHorizontal: 16 },
+  secondaryText: { ...S.btnGhostText, fontSize: 14.5 },
+  primary: { ...S.btn, ...S.btnPrimary, minHeight: 42, paddingHorizontal: 18 },
+  primaryText: { ...S.btnPrimaryText, fontSize: 14.5 },
 });

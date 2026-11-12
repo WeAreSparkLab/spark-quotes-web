@@ -8,6 +8,7 @@ import { supabase } from '../../supabaseClient';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { ensureProfile } from '../../utils/ensureProfile';
 import PasswordInput from '../common/PasswordInput';
+import { C, S } from '../../styles/theme';
 
 // Same production domain used throughout the app (see utils/shareApp.ts,
 // utils/shareQuote.ts). Supabase needs this exact URL allow-listed under
@@ -104,9 +105,17 @@ export default function AuthScreen() {
     }
   };
 
+  const goBack = () => (router.canGoBack() ? router.back() : router.replace('/'));
+  const BackLink = () => (
+    <TouchableOpacity onPress={goBack} accessibilityRole="button" accessibilityLabel="Back" style={styles.back} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+      <Text style={styles.backText}>{'←'}  Back</Text>
+    </TouchableOpacity>
+  );
+
   if (showForgotPassword) {
     return (
       <SafeAreaView style={styles.container}>
+        <BackLink />
         <View style={styles.header}>
           <Text style={styles.title}>Reset Password</Text>
           <Text style={styles.subtitle}>
@@ -118,7 +127,7 @@ export default function AuthScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor="#B0B0B0"
+            placeholderTextColor={C.inkSoft}
             keyboardType="email-address"
             autoCapitalize="none"
             value={resetEmail}
@@ -134,7 +143,7 @@ export default function AuthScreen() {
             disabled={resetLoading}
           >
             {resetLoading ? (
-              <ActivityIndicator color="#FFFFFF" />
+              <ActivityIndicator color={C.onAccent} />
             ) : (
               <Text style={styles.authButtonText}>Send Reset Link</Text>
             )}
@@ -158,6 +167,7 @@ export default function AuthScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <BackLink />
       <View style={styles.header}>
         <Text style={styles.title}>{isLogin ? 'Welcome Back!' : 'Join Spark Quotes'}</Text>
         <Text style={styles.subtitle}>
@@ -169,7 +179,7 @@ export default function AuthScreen() {
         <TextInput
           style={styles.input}
           placeholder="Email"
-          placeholderTextColor="#B0B0B0"
+          placeholderTextColor={C.inkSoft}
           keyboardType="email-address"
           autoCapitalize="none"
           value={email}
@@ -179,7 +189,7 @@ export default function AuthScreen() {
         <PasswordInput
           style={styles.input}
           placeholder="Password (min 8 characters)"
-          placeholderTextColor="#B0B0B0"
+          placeholderTextColor={C.inkSoft}
           value={password}
           onChangeText={setPassword}
           onKeyPress={handleKeyPress}
@@ -203,7 +213,7 @@ export default function AuthScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={C.onAccent} />
           ) : (
             <Text style={styles.authButtonText}>
               {isLogin ? 'Sign In' : 'Sign Up'}
@@ -230,84 +240,33 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0E0F1D', 
+    backgroundColor: C.paper,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
   header: {
-    marginBottom: 40,
+    marginBottom: 28,
     alignItems: 'center',
+    maxWidth: 400,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#B0B0B0',
-  },
+  title: { ...S.h1, fontSize: 34, lineHeight: 40, textAlign: 'center', marginBottom: 8 },
+  subtitle: { ...S.body, fontSize: 15.5, textAlign: 'center' },
   formContainer: {
+    ...S.card,
     width: '100%',
     maxWidth: 400,
-    backgroundColor: '#222034',
-    borderRadius: 15,
-    padding: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 8,
+    padding: 24,
+    borderRadius: 22,
   },
-  input: {
-    backgroundColor: '#333045',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    color: '#FFFFFF',
-    marginBottom: 15,
-    borderColor: '#4D637D',
-    borderWidth: 1,
-  },
-  message: {
-    fontSize: 14,
-    color: '#FFD700', // Warning/info color
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  forgotPasswordButton: {
-    alignSelf: 'flex-end',
-    marginTop: -8,
-    marginBottom: 15,
-  },
-  forgotPasswordText: {
-    color: '#6672E7', // Accent color
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  authButton: {
-    backgroundColor: '#6672E7', // Accent color
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  authButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  toggleButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  toggleButtonText: {
-    color: '#6672E7', // Accent color
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  input: { ...S.input, marginBottom: 14 },
+  message: { ...S.body, color: C.ink, textAlign: 'center', marginBottom: 14, fontWeight: '600' },
+  forgotPasswordButton: { alignSelf: 'flex-end', marginTop: -6, marginBottom: 14, paddingVertical: 4 },
+  forgotPasswordText: { ...S.link, fontSize: 13.5 },
+  authButton: { ...S.btn, ...S.btnPrimary, marginTop: 6 },
+  authButtonText: S.btnPrimaryText,
+  toggleButton: { marginTop: 18, alignItems: 'center', paddingVertical: 6 },
+  toggleButtonText: S.link,
+  back: { position: 'absolute', top: 24, left: 20, paddingVertical: 6 },
+  backText: { ...S.label, fontSize: 14.5 },
 });

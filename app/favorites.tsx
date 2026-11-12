@@ -1,17 +1,11 @@
 // app/favorites.tsx
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  ActivityIndicator,
-  TouchableOpacity,
-} from "react-native";
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, Pressable } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Stack, useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Ionicons } from "../components/common/Ionicons";
-import AppStyles from "../styles/AppStyles";
+import PageHeader from "../components/common/PageHeader";
+import { C, F, S } from "../styles/theme";
 import { useSupabase } from "./_layout";
 import { getFavoriteQuoteIds, removeFavoriteQuote } from "../services/supabaseFavorites";
 import { shareQuote } from "../utils/shareQuote";
@@ -111,182 +105,93 @@ export default function FavoritesScreen() {
     setRemovingId(null);
   };
 
-  const renderQuoteItem = ({ item }: { item: Quote }) => (
-    <View style={styles.quoteCard}>
-      <View style={[AppStyles.categoryBadge, { backgroundColor: "#e63946" }]}>
-        <Text style={AppStyles.categoryText}>{item.category}</Text>
-      </View>
-      <Text style={styles.quoteText}>"{item.text}"</Text>
-      <Text style={styles.authorText}>- {item.author}</Text>
+  const anon = (a: string) => /^(anonymous|unknown)$/i.test(a.trim());
 
-      <View style={styles.cardActions}>
-        <TouchableOpacity
+  const renderQuoteItem = ({ item }: { item: Quote }) => (
+    <View style={S.column}>
+    <View style={[S.card, styles.card]}>
+      <Text style={S.eyebrow}>{item.category}</Text>
+      <Text style={styles.quote}>{"“"}{item.text}{"”"}</Text>
+      <Text style={styles.author}>{anon(item.author) ? "Author unknown" : item.author}</Text>
+
+      <View style={styles.actions}>
+        <Pressable
           onPress={() => handleShare(item)}
           disabled={sharingId === item.id}
-          style={[styles.shareButton, sharingId === item.id && styles.buttonDisabled]}
           accessibilityRole="button"
           accessibilityLabel="Share this quote"
+          style={({ pressed }) => [S.btn, S.btnPrimary, styles.smallBtn, { opacity: sharingId === item.id ? 0.6 : pressed ? 0.8 : 1 }]}
         >
-          <Ionicons name="share-social" color="#FFFFFF" size={18} />
-          <Text style={styles.shareButtonText}>
-            {sharingId === item.id ? "Preparing…" : "Share"}
-          </Text>
-        </TouchableOpacity>
+          <Ionicons name="share-social-outline" color={C.onAccent} size={17} />
+          <Text style={S.btnPrimaryText}>{sharingId === item.id ? "Preparing…" : "Share"}</Text>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           onPress={() => handleRemove(item)}
           disabled={removingId === item.id}
-          style={[styles.removeButton, removingId === item.id && styles.buttonDisabled]}
           accessibilityRole="button"
           accessibilityLabel="Remove from favourites"
+          style={({ pressed }) => [S.btn, S.btnGhost, styles.smallBtn, { opacity: removingId === item.id ? 0.6 : pressed ? 0.8 : 1 }]}
         >
-          <Ionicons name="heart-dislike-outline" color="#E0A0A5" size={18} />
-          <Text style={styles.removeButtonText}>Remove</Text>
-        </TouchableOpacity>
+          <Ionicons name="heart-dislike-outline" color={C.ink} size={17} />
+          <Text style={S.btnGhostText}>Remove</Text>
+        </Pressable>
       </View>
+    </View>
     </View>
   );
 
-  return (
-    <SafeAreaView style={styles.sceneContainer}>
-        <View style={styles.header}>
-          <TouchableOpacity
-            onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
-            style={styles.backButton}
-          >
-            <Ionicons name="arrow-back" color="#FFFFFF" size={24} />
-          </TouchableOpacity>
-          <View style={styles.headerTitleContainer}>
-            <Text style={styles.sceneTitle}>Favorite Quotes</Text>
-          </View>
-        </View>
+  const count = favoriteQuotes.length;
 
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#FFFFFF" style={styles.loader} />
-        ) : error ? (
-          <Text style={styles.errorText}>{error}</Text>
-        ) : favoriteQuotes.length === 0 ? (
-          <Text style={styles.emptyText}>
-            No favorite quotes yet! Tap the heart icon on your daily quotes to
-            save them.
-          </Text>
-        ) : (
-          <FlatList
-            data={favoriteQuotes}
-            renderItem={renderQuoteItem}
-            keyExtractor={(item) => item.id}
-            contentContainerStyle={styles.flatListContent}
+  return (
+    <SafeAreaView style={S.page}>
+      <FlatList
+        data={isLoading || error ? [] : favoriteQuotes}
+        renderItem={renderQuoteItem}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        ListHeaderComponent={
+          <PageHeader
+            title="Your favourites"
+            subtitle={!userId || isLoading || error ? undefined : count === 0 ? undefined : `${count} saved ${count === 1 ? "quote" : "quotes"}`}
           />
-        )}
+        }
+        ListEmptyComponent={
+          <View style={S.column}>
+            {isLoading ? (
+              <ActivityIndicator size="large" color={C.accent} style={{ marginTop: 40 }} />
+            ) : !userId ? (
+              <View style={[S.card, styles.empty]}>
+                <Text style={S.h2}>Keep the ones that land</Text>
+                <Text style={[S.body, styles.emptyBody]}>Sign in to save quotes and find them here whenever you need them.</Text>
+                <Pressable onPress={() => router.push("/auth")} accessibilityRole="button" style={({ pressed }) => [S.btn, S.btnPrimary, { opacity: pressed ? 0.8 : 1 }]}>
+                  <Text style={S.btnPrimaryText}>Sign in or create an account</Text>
+                </Pressable>
+              </View>
+            ) : error ? (
+              <Text accessibilityRole="alert" style={[S.body, { color: C.danger }]}>{error}</Text>
+            ) : (
+              <View style={[S.card, styles.empty]}>
+                <Text style={S.h2}>Nothing saved yet</Text>
+                <Text style={[S.body, styles.emptyBody]}>Tap Save on any quote and it will wait for you here.</Text>
+                <Pressable onPress={() => router.replace("/")} accessibilityRole="button" style={({ pressed }) => [S.btn, S.btnGhost, { opacity: pressed ? 0.8 : 1 }]}>
+                  <Text style={S.btnGhostText}>Find a quote</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        }
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sceneContainer: {
-    flex: 1,
-    backgroundColor: "#0C0A1A",
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    backgroundColor: '#0C0A1A',
-    justifyContent: 'flex-start',
-  },
-  headerTitleContainer: {
-    flex: 1,
-    alignItems: 'center',
-    marginRight: 24,
-  },
-  sceneTitle: {
-    ...AppStyles.title,
-    color: "#FFFFFF",
-    textShadowColor: "rgba(96, 116, 245, 0.5)",
-    textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 10,
-    marginLeft: 16,
-  },
-  backButton: {
-    padding: 10,
-  },
-  loader: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  errorText: {
-    color: "#E63946",
-    textAlign: "center",
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  emptyText: {
-    color: "#D0D0D0",
-    textAlign: "center",
-    marginTop: 50,
-    fontSize: 16,
-    paddingHorizontal: 20,
-  },
-  flatListContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-    paddingTop: 12,
-    // Was 60 each side, which left cards too narrow for the action buttons
-    // on a phone.
-    maxWidth: 760,
-    width: "100%",
-    alignSelf: "center",
-  },
-  cardActions: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginTop: 16,
-  },
-  shareButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    paddingVertical: 9,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: "#6672E7",
-  },
-  shareButtonText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
-  removeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    paddingVertical: 9,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.18)",
-  },
-  removeButtonText: { color: "#E0A0A5", fontWeight: "700", fontSize: 14 },
-  buttonDisabled: { opacity: 0.6 },
-  quoteCard: {
-    backgroundColor: "rgba(12, 10, 26, 0.8)",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    alignItems: "center",
-  },
-  quoteText: {
-    fontSize: 18,
-    fontStyle: "italic",
-    textAlign: "center",
-    color: "#E0E0E0",
-    marginBottom: 8,
-  },
-  authorText: {
-    fontSize: 14,
-    fontWeight: "bold",
-    color: "#B0B0B0",
-    textAlign: "center",
-  },
+  card: { paddingVertical: 22 },
+  quote: { fontFamily: F.serif, fontSize: 21, lineHeight: 29, color: C.ink, marginTop: 10 },
+  author: { fontFamily: F.sans, fontSize: 12.5, letterSpacing: 1.5, textTransform: "uppercase", fontWeight: "600", color: C.inkSoft, marginTop: 12 },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 18 },
+  smallBtn: { minHeight: 40, paddingHorizontal: 16 },
+  empty: { alignItems: "flex-start", gap: 4, paddingVertical: 24 },
+  emptyBody: { marginBottom: 14 },
 });

@@ -90,6 +90,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
   const [isSharing, setIsSharing] = useState(false);
   const [hasReported, setHasReported] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const [worldsOpen, setWorldsOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [still, setStill] = useState(false);
   const [prefsReady, setPrefsReady] = useState(false);
@@ -367,30 +368,48 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
               </View>
             </View>
           ) : (
-            <View style={styles.switchRow}>
-              <View role="radiogroup" aria-label="Choose a world" style={styles.worlds}>
-                {WORLD_ORDER.map((id) => {
-                  const on = id === q.world;
-                  return (
-                    <Pressable
-                      key={id}
-                      role="radio"
-                      aria-checked={on}
-                      aria-label={WORLDS[id].name}
-                      onPress={() => q.visitWorld(id)}
-                      style={({ pressed }) => [styles.worldBtn, { backgroundColor: on ? ui.fillOn : "transparent", borderColor: on ? "transparent" : ui.line, opacity: pressed ? 0.7 : 1 }]}
-                    >
-                      <Text style={[styles.worldBtnText, { color: on ? ui.inkOn : ui.ink, fontFamily: SANS }]} numberOfLines={1}>
-                        {SHORT_NAME[id]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
+            // The world follows the quote and the mood, so nobody has to
+            // choose one. Wandering is there for those who want it.
+            worldsOpen ? (
+              <View style={styles.switchRow}>
+                <View role="radiogroup" aria-label="Choose a world" style={styles.worlds}>
+                  {WORLD_ORDER.map((id) => {
+                    const on = id === q.world;
+                    return (
+                      <Pressable
+                        key={id}
+                        role="radio"
+                        aria-checked={on}
+                        aria-label={WORLDS[id].name}
+                        onPress={() => { q.visitWorld(id); setWorldsOpen(false); }}
+                        style={({ pressed }) => [styles.worldBtn, { backgroundColor: on ? ui.fillOn : "transparent", borderColor: on ? "transparent" : ui.line, opacity: pressed ? 0.7 : 1 }]}
+                      >
+                        <Text style={[styles.worldBtnText, { color: on ? ui.inkOn : ui.ink, fontFamily: SANS }]} numberOfLines={1}>
+                          {SHORT_NAME[id]}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <Pressable onPress={() => setWorldsOpen(false)} accessibilityRole="button" accessibilityLabel="Close" hitSlop={8} style={styles.reask}>
+                  <Ionicons name="close" size={19} color={ui.ink} />
+                </Pressable>
               </View>
-              <Pressable onPress={() => setAskOpen(true)} accessibilityRole="button" accessibilityLabel="Choose what you would like a little more of today" hitSlop={8} style={styles.reask}>
-                <Ionicons name="sparkles-outline" size={18} color={ui.ink} />
-              </Pressable>
-            </View>
+            ) : (
+              <View style={styles.hereRow}>
+                <Pressable onPress={() => setWorldsOpen(true)} accessibilityRole="button" accessibilityLabel={`You're in ${cfg.name}. Visit a different world`} hitSlop={6} style={({ pressed }) => [styles.here, { opacity: pressed ? 0.65 : 1 }]}>
+                  <Ionicons name="compass-outline" size={16} color={ui.ink} />
+                  {width >= 520 ? (
+                    <Text style={[styles.hereText, { color: ui.soft, fontFamily: SERIF }]} numberOfLines={1}>{cfg.mood}</Text>
+                  ) : null}
+                  <Text style={[styles.hereLink, { color: ui.ink, fontFamily: SANS }]}>{width >= 520 ? "Wander" : "Visit another world"}</Text>
+                </Pressable>
+                <Pressable onPress={() => setAskOpen(true)} accessibilityRole="button" accessibilityLabel="Choose what you would like a little more of today" hitSlop={6} style={({ pressed }) => [styles.here, { opacity: pressed ? 0.65 : 1 }]}>
+                  <Ionicons name="sparkles-outline" size={16} color={ui.ink} />
+                  <Text style={[styles.hereLink, { color: ui.ink, fontFamily: SANS }]}>{q.mood ? MOODS.find((m) => m.id === q.mood)!.label : width >= 380 ? "Choose a mood" : "Mood"}</Text>
+                </Pressable>
+              </View>
+            )
           )}
 
           <View style={[styles.dock, { borderColor: ui.line }]} role="navigation" aria-label="Main">
@@ -457,6 +476,10 @@ const styles = StyleSheet.create({
   worldBtn: { flexGrow: 1, flexShrink: 1, minHeight: 38, alignItems: "center", justifyContent: "center", borderRadius: 999, borderWidth: 1, paddingHorizontal: 8 },
   worldBtnText: { fontSize: 13, fontWeight: "600" },
   reask: { width: 40, height: 38, alignItems: "center", justifyContent: "center" },
+  hereRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 6, marginBottom: 10, minHeight: 38 },
+  here: { flexDirection: "row", alignItems: "center", gap: 7, minHeight: 38, flexShrink: 1 },
+  hereText: { fontSize: 15.5, fontStyle: "italic", flexShrink: 1 },
+  hereLink: { fontSize: 13.5, fontWeight: "600", textDecorationLine: "underline" },
   dock: { flexDirection: "row", justifyContent: "space-around", borderTopWidth: 1, paddingTop: 8, paddingBottom: 9 },
   dockBtn: { alignItems: "center", gap: 3, minWidth: 64, paddingVertical: 2 },
   dockText: { fontSize: 11.5, fontWeight: "600" },

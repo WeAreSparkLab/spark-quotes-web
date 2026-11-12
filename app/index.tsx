@@ -15,7 +15,7 @@ export default function App() {
   const [bannerShowing, setBannerShowing] = useState(false);
   return (
     <>
-      <WorldsScreen topInset={bannerShowing ? 84 : 0} />
+      <WorldsScreen topInset={bannerShowing ? 70 : 0} />
       {Platform.OS === "web" ? <InstallPrompt onVisibleChange={setBannerShowing} /> : null}
     </>
   );
