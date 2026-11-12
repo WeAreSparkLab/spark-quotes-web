@@ -258,7 +258,9 @@ export default function Settings() {
       const { data, error } = await supabase
         .schema("quotes")
         .from("notification_preferences")
-        .select("enabled, times")
+        // "*" rather than a column list: `days` only exists once the
+        // reminder_days migration is applied, and naming it would fail before.
+        .select("*")
         .eq("user_id", userId)
         .maybeSingle();
       if (!live || error || !data) return;
@@ -267,6 +269,10 @@ export default function Settings() {
       const times = labels.length > 0 ? labels : DEFAULT_TIMES;
       setNotificationsEnabled(!!data.enabled);
       setSelectedTimes(times);
+      if (Array.isArray(data.days) && data.days.length > 0) {
+        setSelectedDays(data.days);
+        try { await AsyncStorage.setItem("selectedDays", JSON.stringify(data.days)); } catch {}
+      }
       // Keep this device in step, so the home screen changes quote at the
       // same moments the notifications arrive (utils/schedule reads these).
       try {
@@ -298,6 +304,10 @@ export default function Settings() {
           .map((slot) => slot.time);
 
         if (selectedTimes.length === 0) setSelectedTimes(DEFAULT_TIMES);
+
+        // Same rule for days: an empty list would mean "on, but never".
+        const chosenDays = selectedDays.length > 0 ? selectedDays : dayOptions;
+        if (selectedDays.length === 0) setSelectedDays(dayOptions);
         
         try {
           console.log('Saving notification preferences for userId:', userId);
@@ -317,32 +327,42 @@ export default function Settings() {
           if (existing) {
             // Update existing record
             console.log('Updating existing notification preferences...');
-            const result = await supabase
+            const fields = {
+              enabled: notificationsEnabled,
+              times: notificationTimes,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              updated_at: new Date().toISOString()
+            };
+            let result = await supabase
               .schema('quotes')
               .from('notification_preferences')
-              .update({
-                enabled: notificationsEnabled,
-                times: notificationTimes,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                updated_at: new Date().toISOString()
-              })
+              .update({ ...fields, days: chosenDays })
               .eq('user_id', userId);
+            // Before the reminder_days migration the column doesn't exist;
+            // save everything else rather than failing.
+            if (result.error && /days/.test(result.error.message)) {
+              result = await supabase.schema('quotes').from('notification_preferences').update(fields).eq('user_id', userId);
+            }
             error = result.error;
             data = result.data;
           } else {
             // Insert new record
             console.log('Inserting new notification preferences...');
-            const result = await supabase
+            const fields = {
+              user_id: userId,
+              enabled: notificationsEnabled,
+              times: notificationTimes,
+              timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+            let result = await supabase
               .schema('quotes')
               .from('notification_preferences')
-              .insert({
-                user_id: userId,
-                enabled: notificationsEnabled,
-                times: notificationTimes,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              });
+              .insert({ ...fields, days: chosenDays });
+            if (result.error && /days/.test(result.error.message)) {
+              result = await supabase.schema('quotes').from('notification_preferences').insert(fields);
+            }
             error = result.error;
             data = result.data;
           }

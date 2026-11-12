@@ -30,7 +30,8 @@ export default async function handler(req, res) {
     const { data: allPreferences, error: prefError } = await supabase
       .schema('quotes')
       .from('notification_preferences')
-      .select('user_id, times, timezone')
+      // "*" so this works before and after the reminder_days migration adds `days`
+      .select('*')
       .eq('enabled', true);
     
     if (prefError) {
@@ -53,6 +54,17 @@ export default async function handler(req, res) {
       }
       
       try {
+        // Respect the days chosen in Settings ("Mon".."Sun"), judged in the
+        // user's own timezone. No `days` (older rows, or before the
+        // migration) means every day, as before.
+        if (Array.isArray(pref.days) && pref.days.length > 0) {
+          const weekday = new Intl.DateTimeFormat('en-GB', { weekday: 'short', timeZone: pref.timezone }).format(now);
+          if (!pref.days.includes(weekday)) {
+            console.log(`User ${pref.user_id.substring(0, 8)} skipped: ${weekday} not in chosen days`);
+            return false;
+          }
+        }
+
         // For each saved time (e.g., "09:00"), check if it matches current UTC hour in their timezone
         const shouldNotify = pref.times.some(localTime => {
           const [hours] = localTime.split(':').map(Number);
