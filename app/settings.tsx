@@ -247,6 +247,36 @@ export default function Settings() {
     })();
   }, []);
 
+  // When signed in, the account is the source of truth for reminders — it's
+  // what the notification job actually reads. Without this, Settings showed
+  // whatever this device last stored, and pressing Save copied those stale
+  // choices over the account (e.g. after signing in on a new phone).
+  useEffect(() => {
+    if (!userId) return;
+    let live = true;
+    (async () => {
+      const { data, error } = await supabase
+        .schema("quotes")
+        .from("notification_preferences")
+        .select("enabled, times")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (!live || error || !data) return;
+
+      const labels = TIME_SLOTS.filter((s) => (data.times ?? []).includes(s.time)).map((s) => s.label);
+      const times = labels.length > 0 ? labels : DEFAULT_TIMES;
+      setNotificationsEnabled(!!data.enabled);
+      setSelectedTimes(times);
+      // Keep this device in step, so the home screen changes quote at the
+      // same moments the notifications arrive (utils/schedule reads these).
+      try {
+        await AsyncStorage.setItem("notificationsEnabled", JSON.stringify(!!data.enabled));
+        await AsyncStorage.setItem("selectedTimes", JSON.stringify(times));
+      } catch {}
+    })();
+    return () => { live = false; };
+  }, [userId]);
+
   const handleSaveChanges = async () => {
     if (saving) return;
     setSaving(true);

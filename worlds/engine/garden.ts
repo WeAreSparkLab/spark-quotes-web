@@ -129,7 +129,9 @@ export function buildGarden(compact: boolean): World {
   const spots: { p: THREE.Vector3; s: number; goal: number }[] = [];
   for (let i = 0; i < SAVED; i++) {
     const s = i % 2 ? 1 : -1;
-    spots.push({ p: new THREE.Vector3(s * (2.5 + r() * 1.2), 0.74 + r() * 0.16, 11.2 - (i / SAVED) * 7 + r() * 0.5), s: 0, goal: 0 });
+    // Up the path, between the quote and the menu tray, so a new bloom opens
+    // where it can be seen (nearer spots sat behind the tray).
+    spots.push({ p: new THREE.Vector3(s * (2.4 + r() * 0.9), 0.74 + r() * 0.16, 8.2 - (i / SAVED) * 5 + r() * 0.4), s: 0, goal: 0 });
     saved.setColorAt(i, palette[i % palette.length]);
     saved.setMatrixAt(i, m4.makeScale(0, 0, 0));
   }
