@@ -2,7 +2,9 @@
 import { Platform, Alert, ActionSheetIOS, Linking } from "react-native";
 
 export const LINKS = {
-  BMC_URL: process.env.EXPO_PUBLIC_BMC_URL || "",
+  // Public page, so safe to default: previews and local builds don't carry
+  // the production env vars, and the coffee button used to vanish there.
+  BMC_URL: process.env.EXPO_PUBLIC_BMC_URL || "https://buymeacoffee.com/sparklab",
   TIP_ANY: process.env.EXPO_PUBLIC_TIP_ANY || "",
   TIP_5: process.env.EXPO_PUBLIC_TIP_5 || "",
   TIP_10: process.env.EXPO_PUBLIC_TIP_10 || "",

@@ -45,7 +45,7 @@ export const WORLDS: Record<WorldId, WorldConfig> = {
     veil: "#F3EDE0",
     ground: "#8E9F7B",
     dark: false,
-    categories: ["Motivation", "Growth", "Creativity", "Dreams"],
+    categories: ["Motivation", "Growth", "Creativity", "Dreams", "Habits", "Productivity", "Study"],
     saveNote: "A new flower opened in the garden.",
   },
   lake: {
@@ -59,7 +59,7 @@ export const WORLDS: Record<WorldId, WorldConfig> = {
     veil: "#232847",
     ground: "#2A2F52",
     dark: true,
-    categories: ["Mindfulness", "Health", "Wisdom", "Love", "Family"],
+    categories: ["Mindfulness", "Health", "Wisdom", "Love", "Family", "Calm", "Gratitude", "Relationships"],
     saveNote: "A lantern was set afloat on the lake.",
   },
   summit: {
@@ -73,7 +73,7 @@ export const WORLDS: Record<WorldId, WorldConfig> = {
     veil: "#20264D",
     ground: "#3A335A",
     dark: true,
-    categories: ["Resilience", "Success", "Advice"],
+    categories: ["Resilience", "Success", "Advice", "Courage", "Confidence", "Discipline", "Focus", "Leadership"],
     saveNote: "A new star came out above the summit.",
   },
   sunroom: {
@@ -106,10 +106,9 @@ export function worldForCategory(category?: string | null): WorldId {
 // ── "What would you like a little more of today?" ──────────────────────────
 //
 // Every choice resolves to categories that actually have quotes in
-// approved_quotes (checked against the live table, Nov 2026). The topic list
-// in data.ts also names Courage / Calm / Focus, but those have no rows, so
-// the choices below borrow from their nearest real neighbours rather than
-// returning nothing.
+// approved_quotes once the Nov 2026 quote review migration is applied
+// (supabase/migrations/20261112_quote_review.sql). Until then, a choice whose
+// topics are still empty falls back to the bundled quotes in data.ts.
 
 export type MoodId =
   | "courage"
@@ -128,11 +127,11 @@ export interface MoodConfig {
 }
 
 export const MOODS: MoodConfig[] = [
-  { id: "courage", label: "Courage", world: "summit", categories: ["Resilience", "Dreams"] },
-  { id: "calm", label: "Calm", world: "lake", categories: ["Mindfulness", "Health"] },
-  { id: "motivation", label: "Motivation", world: "garden", categories: ["Motivation", "Growth", "Success"] },
-  { id: "hope", label: "Hope", world: "lake", categories: ["Good Vibes", "Dreams", "Love"] },
-  { id: "focus", label: "Focus", world: "summit", categories: ["Wisdom", "Advice", "Success"] },
+  { id: "courage", label: "Courage", world: "summit", categories: ["Courage", "Confidence", "Resilience"] },
+  { id: "calm", label: "Calm", world: "lake", categories: ["Calm", "Mindfulness"] },
+  { id: "motivation", label: "Motivation", world: "garden", categories: ["Motivation", "Growth", "Habits"] },
+  { id: "hope", label: "Hope", world: "lake", categories: ["Good Vibes", "Dreams", "Gratitude"] },
+  { id: "focus", label: "Focus", world: "summit", categories: ["Focus", "Discipline", "Productivity", "Wisdom"] },
   { id: "laughter", label: "Laughter", world: "sunroom", categories: ["Funny"] },
   { id: "surprise", label: "Surprise me", world: null, categories: null },
 ];

@@ -390,6 +390,32 @@ async function generate() {
     urls.push(`${SITE}/quote/${slug}`);
   }
 
+  // Old addresses for quotes whose wording was corrected. The slug is built
+  // from the text, so a correction would otherwise break links already
+  // shared or indexed; these pages send visitors (and search engines, via
+  // the canonical) to the new address.
+  const legacy = require('./legacy-quote-slugs.json');
+  const byId = new Map(quotes.map((q) => [q.id, q]));
+  let redirects = 0;
+  for (const old of legacy) {
+    const current = byId.get(old.id);
+    if (!current) continue;
+    const oldSlug = quoteSlug({ ...current, text: old.text });
+    const newSlug = quoteSlug(current);
+    if (oldSlug === newSlug || seen.has(oldSlug)) continue;
+    const target = `${SITE}/quote/${newSlug}`;
+    fs.writeFileSync(
+      path.join(dist, 'quote', `${oldSlug}.html`),
+      `<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>Spark Quotes</title>` +
+        `<link rel="canonical" href="${target}"><meta name="robots" content="noindex">` +
+        `<meta http-equiv="refresh" content="0; url=${target}"></head>` +
+        `<body><p><a href="${target}">This quote has moved.</a></p>` +
+        `<script>location.replace(${JSON.stringify(target)})</script></body></html>`
+    );
+    redirects++;
+  }
+  if (redirects) console.log(`[seo] ${redirects} redirects from corrected quote wording`);
+
   // Category pages
   for (const [category, list] of byCategory) {
     const slug = slugify(category);

@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { LINKS } from "../../utils/support";
+import { LINKS, openCoffee } from "../../utils/support";
 import Head from "expo-router/head";
 import { supabase } from "../../supabaseClient";
 import { useSupabase } from "../../app/_layout";
@@ -89,7 +89,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
   useEffect(() => {
     if (typeof linkedId === "string" && /^[A-Za-z0-9-]{1,64}$/.test(linkedId)) openQuote(linkedId);
   }, [linkedId, openQuote]);
-  const hasTips = !!(LINKS.BMC_URL || LINKS.TIP_ANY || LINKS.TIP_5 || LINKS.TIP_10);
   const { width, height } = useWindowDimensions();
   const cfg = WORLDS[q.world];
   const quote = q.quote;
@@ -319,7 +318,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                   {Platform.OS === "web" ? (
                     <Pill quiet icon="book-outline" label={`All ${quote.category} quotes`} onPress={onCollection} />
                   ) : null}
-                  {hasTips ? <Pill quiet icon="cafe-outline" label="Support Spark Quotes" onPress={() => router.push("/settings")} /> : null}
+                  {LINKS.BMC_URL ? <Pill quiet icon="cafe-outline" label="Buy us a coffee" onPress={openCoffee} a11y="Buy us a coffee (opens Buy Me a Coffee)" /> : null}
                   <Pill quiet icon="albums-outline" label="Classic view" onPress={() => router.push("/classic" as any)} />
                   <Pill quiet icon="flag-outline" label={hasReported ? "Reported" : "Report"} onPress={onReport} disabled={hasReported} a11y="Report this quote as inappropriate" />
                 </View>
