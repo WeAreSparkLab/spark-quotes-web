@@ -393,7 +393,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
             // choose one. Wandering is there for those who want it.
             worldsOpen ? (
               <View style={styles.switchRow}>
-                <View role="radiogroup" aria-label="Choose a world" style={styles.worlds}>
+                <View role="radiogroup" aria-label="Choose a world" style={[styles.worlds, width < 520 ? styles.worldsGrid : null]}>
                   {WORLD_ORDER.map((id) => {
                     const on = id === q.world;
                     return (
@@ -403,7 +403,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                         aria-checked={on}
                         aria-label={WORLDS[id].name}
                         onPress={() => { q.visitWorld(id); setWorldsOpen(false); }}
-                        style={({ pressed }) => [styles.worldBtn, { backgroundColor: on ? ui.fillOn : "transparent", borderColor: on ? "transparent" : ui.line, opacity: pressed ? 0.7 : 1 }]}
+                        style={({ pressed }) => [styles.worldBtn, width < 520 ? styles.worldBtnGrid : null, { backgroundColor: on ? ui.fillOn : "transparent", borderColor: on ? "transparent" : ui.line, opacity: pressed ? 0.7 : 1 }]}
                       >
                         <Text style={[styles.worldBtnText, { color: on ? ui.inkOn : ui.ink, fontFamily: SANS }]} numberOfLines={1}>
                           {SHORT_NAME[id]}
@@ -500,10 +500,13 @@ const styles = StyleSheet.create({
   skip: { paddingVertical: 4, paddingHorizontal: 6 },
   skipText: { fontSize: 13.5, fontWeight: "600", textDecorationLine: "underline" },
   chips: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 11, marginBottom: 12 },
-  switchRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 10 },
+  switchRow: { flexDirection: "row", alignItems: "flex-start", gap: 6, marginBottom: 10 },
   worlds: { flexDirection: "row", flex: 1, gap: 5 },
   worldBtn: { flexGrow: 1, flexShrink: 1, minHeight: 38, alignItems: "center", justifyContent: "center", borderRadius: 999, borderWidth: 1, paddingHorizontal: 8 },
   worldBtnText: { fontSize: 13, fontWeight: "600" },
+  // phones: two per row so every name shows in full
+  worldsGrid: { flexWrap: "wrap", gap: 6 },
+  worldBtnGrid: { flexBasis: "46%", minHeight: 42 },
   reask: { width: 40, height: 38, alignItems: "center", justifyContent: "center" },
   hereRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10, paddingHorizontal: 6, marginBottom: 10, minHeight: 38 },
   here: { flexDirection: "row", alignItems: "center", gap: 7, minHeight: 38, flexShrink: 1 },
