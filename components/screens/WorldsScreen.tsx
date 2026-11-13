@@ -311,6 +311,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
 
               {moreOpen ? (
                 <View style={styles.more}>
+                  <Pill quiet icon="leaf-outline" label="A quiet minute" onPress={() => router.push(`/reflect?q=${encodeURIComponent(quote.id)}` as any)} a11y="A quiet minute with this quote" />
                   {!q.isDaily ? <Pill quiet icon="today-outline" label="Today's quote" onPress={q.backToDaily} /> : null}
                   {Platform.OS === "web" ? (
                     <Pill quiet icon="book-outline" label={`All ${quote.category} quotes`} onPress={onCollection} />

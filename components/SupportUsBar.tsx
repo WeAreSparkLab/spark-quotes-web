@@ -61,6 +61,8 @@ export default function SupportUsBar() {
   // The Living Worlds home keeps the scene clear; support lives in its
   // "More" options there instead.
   if (pathname === "/" || pathname === "") return null;
+  // never ask for money during a quiet minute
+  if (pathname?.startsWith("/reflect")) return null;
 
   // Lift above the bottom nav on the classic home
   const bottom = pathname === "/classic" ? 76 : 12;
