@@ -19,6 +19,7 @@ import {
 } from "../../utils/quoteArt";
 import { copyQuoteText, downloadRenderedImage, shareRenderedImage } from "../../utils/shareQuote";
 import { useStudioQuote } from "./useStudioQuote";
+import { LINK_TARGETS, shareLinkUrl } from "../../utils/shareLinks";
 
 const PREFS_KEY = "sparkStudioPrefs"; // remembers typeface and size, not style
 
@@ -144,6 +145,25 @@ export default function Studio() {
         </Pressable>
       </View>
       <Text accessibilityLiveRegion="polite" aria-live="polite" style={[S.body, styles.status]}>{status}</Text>
+
+      <Text style={[S.label, styles.groupLabel, { marginTop: 18 }]}>Or share a link</Text>
+      <Text style={[S.body, styles.hint, { marginTop: -4 }]}>
+        Opens the app or site with a link to this quote, which shows its own preview. To post the image above, use Share image — on a phone it lists Instagram, WhatsApp and your other apps.
+      </Text>
+      <View style={styles.chips}>
+        {LINK_TARGETS.map((t) => (
+          <Pressable
+            key={t.id}
+            accessibilityRole="link"
+            accessibilityLabel={`Share a link on ${t.label} (opens in a new tab)`}
+            onPress={() => window.open(shareLinkUrl(t.id, quote), "_blank", "noopener,noreferrer")}
+            style={({ pressed }) => [S.chip, styles.chip, { opacity: pressed ? 0.75 : 1 }]}
+          >
+            <Text style={S.chipText}>{t.label}</Text>
+            <Ionicons name="open-outline" size={14} color={C.inkSoft} />
+          </Pressable>
+        ))}
+      </View>
     </View>
   );
 
