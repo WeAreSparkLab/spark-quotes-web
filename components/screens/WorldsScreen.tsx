@@ -52,7 +52,7 @@ const WEB_CSS = `
 `;
 
 interface Ui {
-  ink: string; soft: string; line: string; fill: string; fillOn: string; inkOn: string; tray: string; shadow: any; veil: any;
+  ink: string; soft: string; line: string; fill: string; fillOn: string; inkOn: string; tray: string; shadow: any; veil: any; narrow: boolean;
 }
 const UiContext = React.createContext<Ui | null>(null);
 
@@ -70,6 +70,7 @@ function Pill({ icon, label, onPress, a11y, on, disabled, quiet, sound = "tap" }
       accessibilityState={{ disabled: !!disabled }}
       style={({ pressed }) => [
         styles.pill,
+        ui.narrow ? styles.pillNarrow : null,
         { borderColor: quiet ? "transparent" : ui.line, backgroundColor: on ? ui.fillOn : quiet ? "transparent" : ui.fill, opacity: disabled ? 0.55 : pressed ? 0.75 : 1 },
       ]}
     >
@@ -241,8 +242,9 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
       veil: Platform.OS === "web"
         ? ({ backgroundImage: `radial-gradient(ellipse 85% 44% at 50% 34%, ${cfg.veil}${dark ? "BF" : "B0"} 0%, ${cfg.veil}${dark ? "66" : "4D"} 46%, ${cfg.veil}00 74%)` } as any)
         : null,
+      narrow: width < 430,
     };
-  }, [cfg]);
+  }, [cfg, width]);
 
   const eyebrow = q.mood
     ? `A little more ${MOODS.find((m) => m.id === q.mood)!.label.toLowerCase().replace("surprise me", "of the unexpected")}`
@@ -312,7 +314,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                 </Text>
               </View>
 
-              <View style={styles.actions}>
+              <View style={[styles.actions, width < 430 ? styles.actionsNarrow : null]}>
                 <Pill
                   icon={isFavorited ? "heart" : "heart-outline"}
                   label={isFavorited ? "Saved" : "Save"}
@@ -348,7 +350,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                 hitSlop={8}
                 style={({ pressed }) => [styles.tryAnother, { opacity: q.busy ? 0.5 : pressed ? 0.6 : 1 }]}
               >
-                <Text style={[styles.tryAnotherText, ui.shadow, { color: ui.soft, fontFamily: SANS }]}>
+                <Text style={[styles.tryAnotherText, ui.shadow, { color: ui.ink, opacity: 0.85, fontFamily: SANS }]}>
                   {q.busy ? "Finding one…" : "Not quite right? "}
                   {q.busy ? null : <Text style={[styles.tryAnotherLink, { color: ui.ink }]}>Try another</Text>}
                 </Text>
@@ -480,6 +482,9 @@ const styles = StyleSheet.create({
     paddingVertical: 9, paddingHorizontal: 13, borderRadius: 999, borderWidth: 1,
   },
   pillText: { fontSize: 14, fontWeight: "600" },
+  // narrow phones: all four actions on one row
+  pillNarrow: { paddingHorizontal: 11, gap: 5, flexShrink: 1 },
+  actionsNarrow: { flexWrap: "nowrap", gap: 5, alignSelf: "stretch" },
   notice: { marginTop: 12, fontSize: 13.5, textAlign: "center", fontWeight: "500" },
   tryAnother: { marginTop: 14, paddingVertical: 8, paddingHorizontal: 10, minHeight: 40, justifyContent: "center" },
   tryAnotherText: { fontSize: 14, textAlign: "center" },
