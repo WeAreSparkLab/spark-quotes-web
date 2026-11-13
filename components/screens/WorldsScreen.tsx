@@ -29,7 +29,7 @@ import WorldCanvas, { type WorldCanvasHandle } from "../worlds/WorldCanvas";
 import { useSparkQuotes } from "../../hooks/useSparkQuotes";
 import { addFavoriteQuote, isQuoteFavorited, removeFavoriteQuote } from "../../services/supabaseFavorites";
 import { getSlotHours } from "../../utils/schedule";
-import { MOODS, WORLDS, WORLD_ORDER, categorySlug, type MoodId, type WorldId } from "../../worlds/config";
+import { MOODS, WORLDS, WORLD_ORDER, type MoodId, type WorldId } from "../../worlds/config";
 
 const SERIF = Platform.OS === "web" ? '"Newsreader", "Iowan Old Style", Georgia, serif' : undefined;
 const SANS = Platform.OS === "web" ? '"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif' : undefined;
@@ -213,12 +213,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
     else { setHasReported(true); setNotice("Thanks — report sent."); }
   }, [quote?.id, hasReported, userId]);
 
-  const onCollection = useCallback(() => {
-    if (!quote?.category) return;
-    const path = `/quotes/${categorySlug(quote.category)}`;
-    if (Platform.OS === "web") window.location.assign(path);
-  }, [quote?.category]);
-
 
   // ── look ─────────────────────────────────────────────────────────────────
   const wide = width >= 900;
@@ -331,9 +325,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
               {moreOpen ? (
                 <View style={styles.more}>
                   {!q.isDaily ? <Pill quiet icon="today-outline" label="Today's quote" onPress={q.backToDaily} /> : null}
-                  {Platform.OS === "web" ? (
-                    <Pill quiet icon="book-outline" label={`All ${quote.category} quotes`} onPress={onCollection} />
-                  ) : null}
                   {LINKS.BMC_URL ? <Pill quiet icon="cafe-outline" label="Buy us a coffee" onPress={openCoffee} a11y="Buy us a coffee (opens Buy Me a Coffee)" /> : null}
                   <Pill quiet icon="flag-outline" label={hasReported ? "Reported" : "Report"} onPress={onReport} disabled={hasReported} a11y="Report this quote as inappropriate" />
                 </View>
