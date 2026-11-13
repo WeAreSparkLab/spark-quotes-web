@@ -18,6 +18,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { LINKS, openCoffee } from "../../utils/support";
 import { play, type SoundName } from "../../utils/sound";
 import SoundToggle from "../common/SoundToggle";
+import SparkMark from "../common/SparkMark";
 import Head from "expo-router/head";
 import { supabase } from "../../supabaseClient";
 import { useSupabase } from "../../app/_layout";
@@ -270,9 +271,12 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
       <SafeAreaView style={[styles.safe, { paddingTop: topInset }]} edges={["top", "bottom"]}>
         {/* header */}
         <View style={styles.header}>
-          <Text accessibilityRole="header" aria-level={1} style={[styles.wordmark, ui.shadow, { color: ui.ink, fontFamily: SERIF }]}>
-            Spark Quotes
-          </Text>
+          <View style={styles.brand}>
+            <SparkMark size={20} />
+            <Text accessibilityRole="header" aria-level={1} style={[styles.wordmark, ui.shadow, { color: ui.ink, fontFamily: SERIF }]}>
+              Spark Quotes
+            </Text>
+          </View>
           <View style={styles.headerRight}>
             <Text style={[styles.worldName, ui.shadow, { color: ui.soft, fontFamily: SERIF }]} numberOfLines={1}>
               {cfg.name}
@@ -329,7 +333,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                     <Pill quiet icon="book-outline" label={`All ${quote.category} quotes`} onPress={onCollection} />
                   ) : null}
                   {LINKS.BMC_URL ? <Pill quiet icon="cafe-outline" label="Buy us a coffee" onPress={openCoffee} a11y="Buy us a coffee (opens Buy Me a Coffee)" /> : null}
-                  <Pill quiet icon="albums-outline" label="Classic view" onPress={() => router.push("/classic" as any)} />
                   <Pill quiet icon="flag-outline" label={hasReported ? "Reported" : "Report"} onPress={onReport} disabled={hasReported} a11y="Report this quote as inappropriate" />
                 </View>
               ) : null}
@@ -463,6 +466,7 @@ const styles = StyleSheet.create({
   wordmark: { fontSize: 21, letterSpacing: -0.2, fontWeight: "500" },
   worldName: { fontSize: 15, fontStyle: "italic", flexShrink: 1, textAlign: "right" },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
+  brand: { flexDirection: "row", alignItems: "center", gap: 8 },
   scroll: { flex: 1 },
   scrollBody: { flexGrow: 1, alignItems: "center", paddingHorizontal: 18, paddingBottom: 18 },
   quoteBlock: { width: "100%", maxWidth: 720, alignItems: "center" },
