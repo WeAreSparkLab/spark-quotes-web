@@ -108,6 +108,22 @@ useEffect(() => {
     }
   }, [userId]);
 
+  // The keyboard focus ring, added from code so it applies in development
+  // and production alike (styles inside <Head> only reach the static build).
+  useEffect(() => {
+    if (Platform.OS !== 'web' || document.getElementById('sq-focus-ring')) return;
+    const s = document.createElement('style');
+    s.id = 'sq-focus-ring';
+    s.textContent = `
+      [role="button"]:focus-visible, [role="radio"]:focus-visible, [role="checkbox"]:focus-visible,
+      [role="switch"]:focus-visible, [role="link"]:focus-visible, a:focus-visible,
+      input:focus-visible, textarea:focus-visible {
+        outline: 2px solid #A078B4 !important; outline-offset: 3px; border-radius: 12px;
+      }
+      @media (prefers-reduced-motion: reduce) { canvas, * { transition-duration: 0ms !important; } }`;
+    document.head.appendChild(s);
+  }, []);
+
   // Handle app visibility changes (PWA coming back from background)
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -226,6 +242,14 @@ useEffect(() => {
               }
               body {
                 overscroll-behavior: none;
+              }
+              /* A clear, consistent keyboard focus ring on every control. */
+              [role="button"]:focus-visible, [role="radio"]:focus-visible, [role="checkbox"]:focus-visible,
+              [role="switch"]:focus-visible, [role="link"]:focus-visible, a:focus-visible,
+              input:focus-visible, textarea:focus-visible {
+                outline: 2px solid #A078B4 !important;
+                outline-offset: 3px;
+                border-radius: 12px;
               }
             `
           }} />

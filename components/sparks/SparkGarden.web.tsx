@@ -5,7 +5,7 @@
 // the list view via onUnavailable.
 
 import React, { useEffect, useRef } from "react";
-import type { SparkGarden as Garden } from "../../worlds/engine/sparks";
+import type { SparkGarden as Garden } from "../../worlds/engine";
 import type { SparkGardenProps } from "./SparkGarden";
 
 export type { SparkGardenProps } from "./SparkGarden";
@@ -25,7 +25,7 @@ export default function SparkGarden({ sparks, selectedId, onSelect, onUnavailabl
 
     (async () => {
       try {
-        const { createSparkGarden } = await import("../../worlds/engine/sparks");
+        const { createSparkGarden } = await import("../../worlds/engine");
         if (cancelled) return;
         const g = createSparkGarden(canvas, {
           reduceMotion,

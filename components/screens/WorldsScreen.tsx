@@ -27,7 +27,6 @@ import WorldBackdrop from "../worlds/WorldBackdrop";
 import WorldCanvas, { type WorldCanvasHandle } from "../worlds/WorldCanvas";
 import { useSparkQuotes } from "../../hooks/useSparkQuotes";
 import { addFavoriteQuote, isQuoteFavorited, removeFavoriteQuote } from "../../services/supabaseFavorites";
-import { recordVisit, streakLabel, type Streak } from "../../utils/streak";
 import { getSlotHours } from "../../utils/schedule";
 import { MOODS, WORLDS, WORLD_ORDER, categorySlug, type MoodId, type WorldId } from "../../worlds/config";
 
@@ -102,7 +101,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
   const [prefsReady, setPrefsReady] = useState(false);
   const [no3D, setNo3D] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [streak, setStreak] = useState<Streak | null>(null);
   const [slotCount, setSlotCount] = useState(1);
   const [status, setStatus] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -110,7 +108,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
 
   // ── one-off setup ────────────────────────────────────────────────────────
   useEffect(() => {
-    recordVisit().then(setStreak).catch(() => {});
     getSlotHours().then((h) => setSlotCount(h.length)).catch(() => {});
 
     (async () => {
@@ -356,9 +353,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
 
               {notice ? <Text accessibilityRole="alert" style={[styles.notice, { color: ui.ink, fontFamily: SANS }]}>{notice}</Text> : null}
 
-              {streak && streak.current > 1 ? (
-                <Text style={[styles.streak, ui.shadow, { color: ui.soft, fontFamily: SANS }]}>{streakLabel(streak)}</Text>
-              ) : null}
             </Animated.View>
           ) : (
             <Text style={[styles.loading, { color: ui.soft, fontFamily: SERIF }]} accessibilityLiveRegion="polite">
@@ -486,7 +480,6 @@ const styles = StyleSheet.create({
   tryAnother: { marginTop: 14, paddingVertical: 8, paddingHorizontal: 10, minHeight: 40, justifyContent: "center" },
   tryAnotherText: { fontSize: 14, textAlign: "center" },
   tryAnotherLink: { fontWeight: "600", textDecorationLine: "underline" },
-  streak: { marginTop: 16, fontSize: 12.5, letterSpacing: 0.3 },
   loading: { fontSize: 22, fontStyle: "italic", marginTop: 60, textAlign: "center" },
   prompt: { width: "100%", maxWidth: 520, marginTop: 8 },
   tray: {

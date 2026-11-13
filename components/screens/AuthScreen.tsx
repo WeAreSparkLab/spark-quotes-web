@@ -124,7 +124,7 @@ export default function AuthScreen() {
       <SafeAreaView style={styles.container}>
         <BackLink />
         <View style={styles.header}>
-          <Text style={styles.title}>Reset Password</Text>
+          <Text accessibilityRole="header" aria-level={1} style={styles.title}>Reset Password</Text>
           <Text style={styles.subtitle}>
             Enter your email and we'll send you a link to reset it.
           </Text>
@@ -176,7 +176,7 @@ export default function AuthScreen() {
     <SafeAreaView style={styles.container}>
       <BackLink />
       <View style={styles.header}>
-        <Text style={styles.title}>{isLogin ? 'Welcome Back!' : 'Join Spark Quotes'}</Text>
+        <Text accessibilityRole="header" aria-level={1} style={styles.title}>{isLogin ? 'Welcome Back!' : 'Join Spark Quotes'}</Text>
         <Text style={styles.subtitle}>
           {isLogin ? 'Sign in to continue' : 'Sign up to get started'}
         </Text>

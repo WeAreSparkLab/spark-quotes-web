@@ -6,6 +6,7 @@
 // Saving a quote opens a new bloom beside the path.
 
 import * as THREE from "three";
+import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { WORLDS } from "../config";
 import {
   Kit, World, archGeo, coursedTex, flat, glow, makeMotes, makeSky, noiseTex, seeded, std, sunLight, damp,
@@ -106,26 +107,55 @@ export function buildGarden(compact: boolean): World {
 
   // flowers in the beds (instanced, each its own colour)
   const palette = ["#B79BC6", "#E7B6BC", "#F7EDD4", "#E7C58C", "#8D6AA8", "#F2D3C4"].map((c) => new THREE.Color(c));
-  const bloomGeo = new THREE.IcosahedronGeometry(0.048, 1);
-  bloomGeo.scale(1, 0.7, 1);
-  const bloomMat = std({ roughness: 0.7 });
-  const N = compact ? 460 : 950;
-  const flowers = new THREE.InstancedMesh(bloomGeo, bloomMat, N);
+  // A small flower: five petals around a raised centre, facing up. Petals and
+  // centres are separate instanced meshes sharing the same placements, so
+  // petals take each flower's colour and every centre stays warm gold.
+  const petalShape = (size: number, petals = 5) => {
+    const parts: THREE.BufferGeometry[] = [];
+    for (let i = 0; i < petals; i++) {
+      const p = new THREE.SphereGeometry(size, 8, 6);
+      p.scale(1, 0.26, 0.55);
+      p.translate(size * 0.95, 0, 0);
+      p.rotateZ(0.22); // cupped a little upward
+      p.rotateY((i / petals) * Math.PI * 2);
+      parts.push(p);
+    }
+    const g = mergeGeometries(parts.map((p) => p.toNonIndexed()), false);
+    parts.forEach((p) => p.dispose());
+    return g;
+  };
+  const centreShape = (size: number) => {
+    const c = new THREE.IcosahedronGeometry(size * 0.5, 1);
+    c.scale(1, 0.6, 1);
+    c.translate(0, size * 0.12, 0);
+    return c;
+  };
+  const N = compact ? 360 : 720;
+  const petalMat = std({ roughness: 0.65, side: THREE.DoubleSide });
+  const centreMat = std({ color: "#E9B85C", roughness: 0.6, emissive: "#E9B85C", emissiveIntensity: 0.08 });
+  const flowers = new THREE.InstancedMesh(petalShape(0.05), petalMat, N);
+  const centres = new THREE.InstancedMesh(centreShape(0.05), centreMat, N);
   const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  const tilt = new THREE.Euler();
   for (let i = 0; i < N; i++) {
-    const s = i % 2 ? 1 : -1, big = 0.7 + r() * 0.9;
+    const s = i % 2 ? 1 : -1, big = 0.75 + r() * 0.8;
+    // face up and a little towards the path, each turned its own way
+    q.setFromEuler(tilt.set(0.35 + r() * 0.35, r() * Math.PI * 2, -s * (0.15 + r() * 0.25), "YXZ"));
     m4.compose(v.set(s * (2.45 + r() * 1.45), 0.4 + r() * 0.3, 3.2 + r() * 8.6), q, sc.setScalar(big));
     flowers.setMatrixAt(i, m4);
+    centres.setMatrixAt(i, m4);
     flowers.setColorAt(i, palette[(r() * palette.length) | 0]);
   }
-  flowers.castShadow = false;
-  root.add(flowers);
+  flowers.castShadow = centres.castShadow = false;
+  root.add(flowers, centres);
+  q.identity();
 
   // blooms that open when a quote is saved
   const SAVED = 36;
-  const savedGeo = new THREE.IcosahedronGeometry(0.115, 2);
-  savedGeo.scale(1, 0.62, 1);
-  const saved = new THREE.InstancedMesh(savedGeo, std({ roughness: 0.55, emissive: "#F7E3B0", emissiveIntensity: 0.18 }), SAVED);
+  // the same flower, larger and faintly lit, for each saved quote
+  const savedGeo = petalShape(0.11, 6);
+  savedGeo.rotateX(0.5); // open towards the viewer
+  const saved = new THREE.InstancedMesh(savedGeo, std({ roughness: 0.55, emissive: "#F7E3B0", emissiveIntensity: 0.22, side: THREE.DoubleSide }), SAVED);
   const spots: { p: THREE.Vector3; s: number; goal: number }[] = [];
   for (let i = 0; i < SAVED; i++) {
     const s = i % 2 ? 1 : -1;

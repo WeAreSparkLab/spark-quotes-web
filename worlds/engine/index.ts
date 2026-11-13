@@ -211,3 +211,9 @@ export function createEngine(canvas: HTMLCanvasElement, opts: EngineOptions): En
     },
   };
 }
+
+// The saved-sparks garden shares three.js with the worlds, so it is loaded through
+// this same lazy module: two separate lazy modules sharing three.js would make the
+// bundler hoist three.js into the main bundle.
+export { createSparkGarden } from "./sparks";
+export type { SparkGarden, Spark } from "./sparks";

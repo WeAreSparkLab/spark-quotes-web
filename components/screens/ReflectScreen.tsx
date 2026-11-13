@@ -205,7 +205,7 @@ export default function ReflectScreen() {
             <View style={[styles.panel, { backgroundColor: panel, borderColor: line }]}>
               {phase === "ready" ? (
                 <>
-                  <Text style={[styles.eyebrow, { color: soft, fontFamily: SANS }]}>A quiet minute</Text>
+                  <Text accessibilityRole="header" aria-level={1} style={[styles.eyebrow, { color: soft, fontFamily: SANS }]}>A quiet minute</Text>
                   <Text style={[styles.quote, { color: ink, fontFamily: SERIF }]}>{"“"}{quote.text}{"”"}</Text>
                   <Text style={[styles.author, { color: soft, fontFamily: SANS }]}>{creditLine(quote.author)}</Text>
                   <Text style={[styles.body, { color: soft, fontFamily: SANS }]}>

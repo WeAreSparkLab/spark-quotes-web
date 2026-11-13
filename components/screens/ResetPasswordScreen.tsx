@@ -159,7 +159,7 @@ export default function ResetPasswordScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Link Expired</Text>
+          <Text accessibilityRole="header" aria-level={1} style={styles.title}>Link Expired</Text>
           <Text style={styles.subtitle}>{errorMessage}</Text>
         </View>
 
@@ -186,7 +186,7 @@ export default function ResetPasswordScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Password Updated</Text>
+          <Text accessibilityRole="header" aria-level={1} style={styles.title}>Password Updated</Text>
           <Text style={styles.subtitle}>Taking you to sign in...</Text>
         </View>
         <ActivityIndicator color={C.accent} />
@@ -197,7 +197,7 @@ export default function ResetPasswordScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Choose a New Password</Text>
+        <Text accessibilityRole="header" aria-level={1} style={styles.title}>Choose a New Password</Text>
         <Text style={styles.subtitle}>Enter and confirm your new password below.</Text>
       </View>
 
