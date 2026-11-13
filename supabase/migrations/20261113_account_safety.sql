@@ -1,4 +1,4 @@
--- PROPOSED, NOT APPLIED. Review, then move to supabase/migrations/ to apply.
+-- Applied to sparklab-apps (zckbrbqxnibzmuesqsok) on 2026-11-13 via the SQL editor.
 --
 -- Found while testing the security rules on 2026-11-12 (all tests were run
 -- as simulated users inside rolled-back transactions):
