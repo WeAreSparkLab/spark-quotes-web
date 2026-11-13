@@ -125,8 +125,8 @@ export default async function handler(req, res) {
           },
           webpush: {
             notification: {
-              icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
-              badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
+              icon: 'https://quotes.wearesparklab.com/icons/icon-192.png?v=2',
+              badge: 'https://quotes.wearesparklab.com/icons/badge-96.png',
               vibrate: [200, 100, 200],
               requireInteraction: false,
               data: {

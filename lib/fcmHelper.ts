@@ -232,8 +232,8 @@ export function listenForMessages() {
 
     new Notification(payload.notification.title || 'Spark Quotes', {
       body: payload.notification.body,
-      icon: payload.notification.icon || '/icons/icon-192.png',
-      badge: '/icons/icon-192.png',
+      icon: payload.notification.icon || '/icons/icon-192.png?v=2',
+      badge: '/icons/badge-96.png',
       tag: 'spark-quotes-daily', // must match the server payload tag
       requireInteraction: false,
     });

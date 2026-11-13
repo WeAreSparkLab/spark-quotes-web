@@ -1,4 +1,4 @@
-﻿import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -189,8 +189,8 @@ export default async function handler(req, res) {
             },
             webpush: {
               notification: {
-                icon: 'https://quotes.wearesparklab.com/icons/icon-192.png',
-                badge: 'https://quotes.wearesparklab.com/icons/maskable-192.png',
+                icon: 'https://quotes.wearesparklab.com/icons/icon-192.png?v=2',
+                badge: 'https://quotes.wearesparklab.com/icons/badge-96.png',
                 vibrate: [200, 100, 200],
                 requireInteraction: false,
                 // Shared tag: if anything ever displays this twice, the second

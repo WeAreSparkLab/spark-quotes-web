@@ -205,7 +205,7 @@ useEffect(() => {
           <meta name="apple-mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
-          <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+          <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png?v=2" />
           {/* Living Worlds typography — the same pair as SparkLab Worlds.
               display=swap, so the quote is readable in Georgia straight away. */}
           <link rel="preconnect" href="https://fonts.googleapis.com" />

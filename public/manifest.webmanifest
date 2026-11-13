@@ -12,21 +12,21 @@
   "background_color": "#221C2B",
   "theme_color": "#221C2B",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "/icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
-    { "src": "/icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    { "src": "/icons/icon-192.png?v=2", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icons/icon-512.png?v=2", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icons/maskable-192.png?v=2", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "/icons/maskable-512.png?v=2", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "screenshots": [
     {
-      "src": "/screenshots/home-narrow.png",
+      "src": "/screenshots/home-narrow.png?v=2",
       "sizes": "540x1080",
       "type": "image/png",
       "form_factor": "narrow",
       "label": "Your quote of the day"
     },
     {
-      "src": "/screenshots/home-wide.png",
+      "src": "/screenshots/home-wide.png?v=2",
       "sizes": "1280x740",
       "type": "image/png",
       "form_factor": "wide",
