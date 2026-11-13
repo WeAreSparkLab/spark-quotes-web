@@ -19,6 +19,10 @@ import { Ionicons } from "../common/Ionicons";
 import { useStudioQuote } from "../studio/useStudioQuote";
 import { WORLDS, worldForCategory } from "../../worlds/config";
 import { creditLine } from "../../utils/quoteArt";
+import { play } from "../../utils/sound";
+import SoundToggle from "../common/SoundToggle";
+import { useSupabase } from "../../app/_layout";
+import { addEntry } from "../../services/journal";
 
 const SERIF = Platform.OS === "web" ? '"Newsreader", "Iowan Old Style", Georgia, serif' : undefined;
 const SANS = Platform.OS === "web" ? '"Instrument Sans", system-ui, -apple-system, "Segoe UI", sans-serif' : undefined;
@@ -32,7 +36,9 @@ type Phase = "ready" | "running" | "paused" | "done";
 
 export default function ReflectScreen() {
   const router = useRouter();
+  const { userId } = useSupabase();
   const { quote, state } = useStudioQuote();
+  const [savedTo, setSavedTo] = useState<"journal" | "device">("device");
   const world = quote ? worldForCategory(quote.category) : "lake";
   const cfg = WORLDS[world];
 
@@ -79,6 +85,7 @@ export default function ReflectScreen() {
       setCue(inCycle < IN_MS ? "in" : "out");
       if (ms >= length * 1000) {
         stopClock();
+        play("done");
         setPhase("done");
       }
     }, 200);
@@ -86,6 +93,9 @@ export default function ReflectScreen() {
   useEffect(() => () => stopClock(), []);
 
   // ── the ring ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (phase === "running" && breathing) play(cue === "in" ? "breatheIn" : "breatheOut");
+  }, [cue, phase, breathing]);
   useEffect(() => {
     if (phase !== "running" || !breathing || reduceMotion) { ring.stopAnimation(); return; }
     Animated.timing(ring, {
@@ -102,6 +112,7 @@ export default function ReflectScreen() {
     setCue("in");
     setEndedEarly(false);
     ring.setValue(0);
+    play("begin");
     setPhase("running");
     startClock();
   };
@@ -124,12 +135,26 @@ export default function ReflectScreen() {
   const keepThought = async () => {
     const t = thought.trim();
     if (!t || !quote) return;
+    // signed in: straight into the private Spark Journal
+    if (userId) {
+      try {
+        await addEntry({ kind: "reflection", body: t, quote: { id: quote.id, text: quote.text, author: quote.author } });
+        setSavedTo("journal");
+        setSaved(true);
+        play("save");
+        return;
+      } catch {
+        /* fall back to keeping it on the device */
+      }
+    }
     try {
       const raw = await AsyncStorage.getItem(THOUGHTS_KEY);
       const list = raw ? JSON.parse(raw) : [];
       list.push({ at: new Date().toISOString(), quoteId: quote.id, quote: quote.text, author: quote.author, thought: t.slice(0, 1000) });
       await AsyncStorage.setItem(THOUGHTS_KEY, JSON.stringify(list.slice(-200)));
+      setSavedTo("device");
       setSaved(true);
+      play("save");
     } catch {
       setSaved(false);
     }
@@ -169,6 +194,8 @@ export default function ReflectScreen() {
             <Ionicons name={phase === "running" || phase === "paused" ? "close" : "arrow-back"} size={18} color={ink} />
             <Text style={[styles.topText, { color: ink, fontFamily: SANS }]}>{phase === "running" || phase === "paused" ? "End" : "Back"}</Text>
           </Pressable>
+          <View style={{ flex: 1 }} />
+          <SoundToggle color={ink} background={panel} />
         </View>
 
         <View style={styles.centre}>
@@ -202,7 +229,7 @@ export default function ReflectScreen() {
                   </Text>
                   <Text style={[styles.body, { color: soft, fontFamily: SANS }]}>Come back whenever you like.</Text>
                   {saved ? (
-                    <Text accessibilityRole="alert" style={[styles.body, { color: ink, fontFamily: SANS, fontWeight: "600" }]}>Kept on this device.</Text>
+                    <Text accessibilityRole="alert" style={[styles.body, { color: ink, fontFamily: SANS, fontWeight: "600" }]}>{savedTo === "journal" ? "Saved to your journal." : "Kept on this device."}</Text>
                   ) : (
                     <>
                       <Text style={[styles.label, { color: ink, fontFamily: SANS }]} nativeID="thought-label">A thought, if you'd like (optional)</Text>
@@ -216,7 +243,9 @@ export default function ReflectScreen() {
                         aria-label="A thought, if you'd like"
                         style={[styles.input, { color: ink, borderColor: line, fontFamily: SERIF }]}
                       />
-                      <Text style={[styles.small, { color: soft, fontFamily: SANS }]}>Only kept on this device. Nothing is sent anywhere.</Text>
+                      <Text style={[styles.small, { color: soft, fontFamily: SANS }]}>
+                        {userId ? "Saved to your private journal. Only you can read it." : "Only kept on this device. Nothing is sent anywhere."}
+                      </Text>
                     </>
                   )}
                   <View style={styles.row}>

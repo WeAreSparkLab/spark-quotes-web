@@ -19,6 +19,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Ionicons } from "../components/common/Ionicons";
 import PageHeader from "../components/common/PageHeader";
+import SoundToggle from "../components/common/SoundToggle";
+import { soundSupported } from "../utils/sound";
 import { C, S } from "../styles/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Switch from "../components/common/Switch";
@@ -661,6 +663,18 @@ export default function Settings() {
           {/* The app */}
           <Text style={[S.eyebrow, styles.group]}>The app</Text>
           <View style={S.card}>
+            {soundSupported ? (
+              <>
+                <View style={styles.row}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={S.label}>Sounds</Text>
+                    <Text style={[S.body, { fontSize: 13 }]}>Soft chimes when you save, share or change world.</Text>
+                  </View>
+                  <SoundToggle color={C.ink} label background={C.sheetSunk} />
+                </View>
+                <View style={styles.divider} />
+              </>
+            ) : null}
             <Pressable onPress={shareApp} accessibilityRole="button" style={styles.row}>
               <Text style={S.label}>Share Spark Quotes</Text>
               <Ionicons name="share-outline" size={19} color={C.ink} />

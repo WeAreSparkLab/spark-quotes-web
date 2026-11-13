@@ -22,6 +22,7 @@ import { removeFavoriteQuote } from "../services/supabaseFavorites";
 import { shareQuote } from "../utils/shareQuote";
 import { supabase } from "../supabaseClient";
 import { WORLDS, worldForCategory } from "../worlds/config";
+import { play } from "../utils/sound";
 
 interface Quote {
   id: string;
@@ -260,7 +261,7 @@ export default function FavoritesScreen() {
           {header}
           <View style={[styles.gardenWrap, { maxWidth: wide ? 1040 : 640 }]}>
             <View style={[styles.gardenFrame, { height: gardenH }]}>
-              <SparkGarden sparks={sparks} selectedId={selectedId} onSelect={setSelectedId} onUnavailable={() => setNo3D(true)} />
+              <SparkGarden sparks={sparks} selectedId={selectedId} onSelect={(id) => { if (id) play("open"); setSelectedId(id); }} onUnavailable={() => setNo3D(true)} />
             </View>
 
             <View style={styles.reader} accessibilityLiveRegion="polite" aria-live="polite">

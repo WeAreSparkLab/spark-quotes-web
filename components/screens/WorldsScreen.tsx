@@ -16,6 +16,8 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { LINKS, openCoffee } from "../../utils/support";
+import { play, type SoundName } from "../../utils/sound";
+import SoundToggle from "../common/SoundToggle";
 import Head from "expo-router/head";
 import { supabase } from "../../supabaseClient";
 import { useSupabase } from "../../app/_layout";
@@ -55,13 +57,13 @@ interface Ui {
 const UiContext = React.createContext<Ui | null>(null);
 
 /** The one button shape used across the screen; colours follow the world. */
-function Pill({ icon, label, onPress, a11y, on, disabled, quiet }: {
-  icon?: string; label: string; onPress: () => void; a11y?: string; on?: boolean; disabled?: boolean; quiet?: boolean;
+function Pill({ icon, label, onPress, a11y, on, disabled, quiet, sound = "tap" }: {
+  icon?: string; label: string; onPress: () => void; a11y?: string; on?: boolean; disabled?: boolean; quiet?: boolean; sound?: SoundName | null;
 }) {
   const ui = React.useContext(UiContext)!;
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() => { if (sound) play(sound); onPress(); }}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={a11y ?? label}
@@ -159,6 +161,14 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
     if (!q.loading) setStatus(`Now in ${cfg.name}.`);
   }, [cfg.name, q.loading]);
 
+  // a soft breath of air whenever the world changes (not on first arrival)
+  const lastWorld = useRef<string | null>(null);
+  useEffect(() => {
+    if (q.loading) return;
+    if (lastWorld.current && lastWorld.current !== q.world) play("travel");
+    lastWorld.current = q.world;
+  }, [q.world, q.loading]);
+
   // ── actions ──────────────────────────────────────────────────────────────
   const closeAsk = useCallback(async () => {
     setAskOpen(false);
@@ -175,12 +185,13 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
     if (!quote?.id) return;
     if (isFavorited) {
       const ok = await removeFavoriteQuote(userId, quote.id);
-      if (ok) { setIsFavorited(false); setStatus("Removed from favourites."); }
+      if (ok) { setIsFavorited(false); play("unsave"); setStatus("Removed from favourites."); }
       else setNotice("Couldn't update your favourites. Please try again.");
     } else {
       const ok = await addFavoriteQuote(userId, quote.id);
       if (ok) {
         setIsFavorited(true);
+        play("save");
         canvasHandle.current?.pulse();
         setStatus(`Saved to favourites. ${cfg.saveNote}`);
       } else setNotice("Couldn't update your favourites. Please try again.");
@@ -265,9 +276,12 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
           <Text accessibilityRole="header" aria-level={1} style={[styles.wordmark, ui.shadow, { color: ui.ink, fontFamily: SERIF }]}>
             Spark Quotes
           </Text>
-          <Text style={[styles.worldName, ui.shadow, { color: ui.soft, fontFamily: SERIF }]} numberOfLines={1}>
-            {cfg.name}
-          </Text>
+          <View style={styles.headerRight}>
+            <Text style={[styles.worldName, ui.shadow, { color: ui.soft, fontFamily: SERIF }]} numberOfLines={1}>
+              {cfg.name}
+            </Text>
+            <SoundToggle color={ui.ink} />
+          </View>
         </View>
 
         <ScrollView
@@ -303,15 +317,16 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                   label={isFavorited ? "Saved" : "Save"}
                   on={isFavorited}
                   onPress={onFavorite}
+                  sound={null}
                   a11y={!userId ? "Sign in to save this quote" : isFavorited ? "Remove from favourites" : "Save to favourites"}
                 />
                 <Pill icon="share-social-outline" label="Share" onPress={onShare} a11y="Share this quote as an image" />
+                <Pill icon="leaf-outline" label={width < 430 ? "Quiet" : "Quiet minute"} sound="open" onPress={() => router.push(`/reflect?q=${encodeURIComponent(quote.id)}` as any)} a11y="A quiet minute with this quote" />
                 <Pill icon="ellipsis-horizontal" label={width < 430 ? "" : "More"} onPress={() => setMoreOpen((v) => !v)} a11y={moreOpen ? "Hide more options" : "More options"} on={moreOpen} />
               </View>
 
               {moreOpen ? (
                 <View style={styles.more}>
-                  <Pill quiet icon="leaf-outline" label="A quiet minute" onPress={() => router.push(`/reflect?q=${encodeURIComponent(quote.id)}` as any)} a11y="A quiet minute with this quote" />
                   {!q.isDaily ? <Pill quiet icon="today-outline" label="Today's quote" onPress={q.backToDaily} /> : null}
                   {Platform.OS === "web" ? (
                     <Pill quiet icon="book-outline" label={`All ${quote.category} quotes`} onPress={onCollection} />
@@ -424,6 +439,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
               ["list", "Topics", "/topics"],
               ["heart", "Favourites", "/favorites"],
               ["add", "Add quote", "/submitQuote"],
+              ["book-outline", "Journal", "/journal"],
               ["settings-outline", "Settings", "/settings"],
             ] as const).map(([icon, label, href]) => (
               <Pressable key={href} onPress={() => router.push(href as any)} accessibilityRole="button" accessibilityLabel={label}
@@ -452,6 +468,7 @@ const styles = StyleSheet.create({
   },
   wordmark: { fontSize: 21, letterSpacing: -0.2, fontWeight: "500" },
   worldName: { fontSize: 15, fontStyle: "italic", flexShrink: 1, textAlign: "right" },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 },
   scroll: { flex: 1 },
   scrollBody: { flexGrow: 1, alignItems: "center", paddingHorizontal: 18, paddingBottom: 18 },
   quoteBlock: { width: "100%", maxWidth: 720, alignItems: "center" },

@@ -20,6 +20,7 @@ import {
 import { copyQuoteText, downloadRenderedImage, shareRenderedImage } from "../../utils/shareQuote";
 import { useStudioQuote } from "./useStudioQuote";
 import { LINK_TARGETS, shareLinkUrl } from "../../utils/shareLinks";
+import { play } from "../../utils/sound";
 
 const PREFS_KEY = "sparkStudioPrefs"; // remembers typeface and size, not style
 
@@ -65,12 +66,14 @@ export default function Studio() {
 
   const onShare = useCallback(async () => {
     if (!quote || !canvasRef.current || rendering) return;
+    play("share");
     const r = await shareRenderedImage(canvasRef.current, quote, format);
     setStatus(r === "shared" ? "Shared." : r === "downloaded" ? "This browser can't share images directly, so the image was saved to your downloads." : "");
   }, [quote, rendering, format]);
 
   const onDownload = useCallback(() => {
     if (!quote || !canvasRef.current || rendering) return;
+    play("share");
     downloadRenderedImage(canvasRef.current, quote, format);
     setStatus("Image saved to your downloads.");
   }, [quote, rendering, format]);
@@ -86,7 +89,7 @@ export default function Studio() {
   const scale = Math.min(previewMaxW / dims.w, previewMaxH / dims.h);
 
   const Chip = ({ on, label, onPress, children, a11y }: { on: boolean; label: string; onPress: () => void; children?: React.ReactNode; a11y?: string }) => (
-    <Pressable onPress={onPress} role="radio" aria-checked={on} accessibilityLabel={a11y ?? label}
+    <Pressable onPress={() => { play("tap"); onPress(); }} role="radio" aria-checked={on} accessibilityLabel={a11y ?? label}
       style={({ pressed }) => [S.chip, styles.chip, on && S.chipOn, { opacity: pressed ? 0.75 : 1 }]}>
       {children}
       <Text style={[S.chipText, on && S.chipTextOn]}>{label}</Text>

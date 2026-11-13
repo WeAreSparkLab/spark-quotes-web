@@ -62,7 +62,7 @@ export default function SupportUsBar() {
   // "More" options there instead.
   if (pathname === "/" || pathname === "") return null;
   // never ask for money during a quiet minute
-  if (pathname?.startsWith("/reflect")) return null;
+  if (pathname?.startsWith("/reflect") || pathname?.startsWith("/journal")) return null;
 
   // Lift above the bottom nav on the classic home
   const bottom = pathname === "/classic" ? 76 : 12;

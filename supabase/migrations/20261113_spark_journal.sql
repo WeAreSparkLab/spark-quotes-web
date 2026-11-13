@@ -1,4 +1,4 @@
--- PROPOSED, NOT APPLIED. The Spark Journal.
+-- Applied to sparklab-apps (zckbrbqxnibzmuesqsok) on 2026-11-13. The Spark Journal.
 --
 -- One table for private journal entries: a reflection (optionally about a
 -- quote) or a small intention for the day.
@@ -8,8 +8,8 @@
 --     their own entries. Logged-out visitors (anon) have no access at all.
 --   * user_id defaults to the signed-in user and is checked on every write,
 --     so an entry can never be filed under someone else.
---   * Deleting an account deletes its entries (on delete cascade, and
---     delete_user() is updated to say so explicitly).
+--   * Deleting an account deletes its entries (on delete cascade from
+--     auth.users, which delete_user() removes last).
 --   * Entries are never sent to any AI service. Nothing in the app reads
 --     them except the Journal screen for their owner.
 --   * As with favourites, the database owner (you, via the Supabase
@@ -51,39 +51,5 @@ create policy "journal update own" on quotes.journal_entries
   for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "journal delete own" on quotes.journal_entries
   for delete to authenticated using (user_id = auth.uid());
-
--- Account deletion: say it explicitly as well as relying on the cascade.
-create or replace function quotes.delete_user()
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $$
-declare
-  uid uuid := auth.uid();
-begin
-  if uid is null then
-    raise exception 'Not authenticated';
-  end if;
-
-  delete from quotes.journal_entries where user_id = uid;
-  delete from quotes.favorite_quotes where user_id = uid;
-  delete from quotes.favorites where user_id = uid;
-  delete from quotes.notification_preferences where user_id = uid;
-  delete from quotes.fcm_tokens where user_id = uid;
-  delete from quotes.expo_push_tokens where user_id = uid;
-  delete from quotes.quotes_for_review where submitted_by_user_id = uid and status = 'pending';
-  update quotes.quotes_for_review set submitted_by_user_id = null where submitted_by_user_id = uid;
-  update quotes.quote_reports set reported_by_user_id = null where reported_by_user_id = uid;
-  update quotes.support_keys set redeemed_by = null where redeemed_by = uid;
-  update quotes.supporter_keys set used_by = null where used_by = uid;
-  delete from quotes.profiles where id = uid;
-  delete from auth.users where id = uid;
-end;
-$$;
-
-revoke all on function quotes.delete_user() from public;
-revoke all on function quotes.delete_user() from anon;
-grant execute on function quotes.delete_user() to authenticated;
 
 commit;
