@@ -275,6 +275,51 @@ function safeFilename(quote: ShareableQuote) {
 }
 
 /**
+ * Share an image that has already been drawn (the sharing studio renders
+ * ahead of time). Everything here is synchronous up to navigator.share, so
+ * the tap still counts as a user gesture on Safari.
+ * Resolves to what happened, so the studio can say so.
+ */
+export async function shareRenderedImage(
+  canvas: HTMLCanvasElement,
+  quote: ShareableQuote,
+  suffix = ""
+): Promise<"shared" | "cancelled" | "downloaded"> {
+  const name = safeFilename(quote).replace(/\.png$/, suffix ? `-${suffix}.png` : ".png");
+  const file = canvasToFile(canvas, name);
+  const caption = quoteCaption(quote);
+  const nav = navigator as any;
+  trackEvent("Share Quote", { category: quote.category || "unknown", source: "studio" });
+  try {
+    if (nav.canShare && nav.canShare({ files: [file] }) && nav.share) {
+      await nav.share({ files: [file], text: caption });
+      return "shared";
+    }
+  } catch (e: any) {
+    if (e?.name === "AbortError") return "cancelled";
+  }
+  downloadBlob(file, name);
+  return "downloaded";
+}
+
+/** Save the drawn image to the device. */
+export function downloadRenderedImage(canvas: HTMLCanvasElement, quote: ShareableQuote, suffix = "") {
+  const name = safeFilename(quote).replace(/\.png$/, suffix ? `-${suffix}.png` : ".png");
+  downloadBlob(canvasToFile(canvas, name), name);
+}
+
+/** Copy "quote — author" and the app link. */
+export async function copyQuoteText(quote: ShareableQuote): Promise<boolean> {
+  try {
+    if (Platform.OS === "web" && navigator.clipboard) await navigator.clipboard.writeText(quoteCaption(quote));
+    else await Clipboard.setStringAsync(quoteCaption(quote));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Share a quote as an image. Must be called directly from a user gesture —
  * the Web Share API rejects otherwise.
  */

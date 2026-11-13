@@ -248,6 +248,7 @@ useEffect(() => {
           <Stack.Screen name="submitQuote" options={{ headerShown: false }} />
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
           <Stack.Screen name="topics" options={{ headerShown: false }} />
+          <Stack.Screen name="studio" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
           <Stack.Screen name="reset-password" options={{ headerShown: false }} />
         </Stack>

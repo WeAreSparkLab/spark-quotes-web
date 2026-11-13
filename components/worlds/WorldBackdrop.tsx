@@ -131,6 +131,18 @@ function sunroom() {
 
 const PAINTERS: Record<WorldId, () => string> = { garden, lake, summit, sunroom };
 
+/**
+ * The same painting as a plain image URL with a fixed 1200×800 size, for
+ * drawing onto a canvas (the sharing studio). The CSS version above has no
+ * intrinsic size, which canvas needs.
+ */
+export function worldArtImageUrl(id: WorldId): string {
+  const css = PAINTERS[id]();
+  const encoded = css.slice('url("data:image/svg+xml;utf8,'.length, -'")'.length);
+  const svgText = decodeURIComponent(encoded).replace("<svg ", "<svg width='1200' height='800' ");
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svgText);
+}
+
 export default function WorldBackdrop({ world, settled = true, painted = true }: { world: WorldId; settled?: boolean; painted?: boolean }) {
   // Painted lazily and once each; these are small strings, not images.
   const art = useMemo(() => {

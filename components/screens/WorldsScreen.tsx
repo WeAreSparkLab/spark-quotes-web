@@ -25,7 +25,6 @@ import WorldBackdrop from "../worlds/WorldBackdrop";
 import WorldCanvas, { type WorldCanvasHandle } from "../worlds/WorldCanvas";
 import { useSparkQuotes } from "../../hooks/useSparkQuotes";
 import { addFavoriteQuote, isQuoteFavorited, removeFavoriteQuote } from "../../services/supabaseFavorites";
-import { shareQuote } from "../../utils/shareQuote";
 import { recordVisit, streakLabel, type Streak } from "../../utils/streak";
 import { getSlotHours } from "../../utils/schedule";
 import { MOODS, WORLDS, WORLD_ORDER, categorySlug, type MoodId, type WorldId } from "../../worlds/config";
@@ -94,7 +93,6 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
   const quote = q.quote;
 
   const [isFavorited, setIsFavorited] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
   const [hasReported, setHasReported] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [worldsOpen, setWorldsOpen] = useState(false);
@@ -189,11 +187,11 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
     }
   }, [userId, quote?.id, isFavorited, router, cfg.saveNote]);
 
-  const onShare = useCallback(async () => {
-    if (!quote || isSharing) return;
-    setIsSharing(true);
-    try { await shareQuote(quote); } finally { setIsSharing(false); }
-  }, [quote, isSharing]);
+  // Share opens the studio, where the quote becomes an image in any style.
+  const onShare = useCallback(() => {
+    if (!quote) return;
+    router.push(`/studio?q=${encodeURIComponent(quote.id)}` as any);
+  }, [quote, router]);
 
   const onReport = useCallback(async () => {
     if (!quote?.id || hasReported) return;
@@ -307,7 +305,7 @@ export default function WorldsScreen({ topInset = 0 }: { topInset?: number }) {
                   onPress={onFavorite}
                   a11y={!userId ? "Sign in to save this quote" : isFavorited ? "Remove from favourites" : "Save to favourites"}
                 />
-                <Pill icon="share-social-outline" label={isSharing ? "Preparing…" : "Share"} onPress={onShare} disabled={isSharing} a11y="Share this quote" />
+                <Pill icon="share-social-outline" label="Share" onPress={onShare} a11y="Share this quote as an image" />
                 <Pill icon="ellipsis-horizontal" label={width < 430 ? "" : "More"} onPress={() => setMoreOpen((v) => !v)} a11y={moreOpen ? "Hide more options" : "More options"} on={moreOpen} />
               </View>
 

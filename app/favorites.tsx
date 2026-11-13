@@ -124,7 +124,9 @@ export default function FavoritesScreen() {
 
   useFocusEffect(useCallback(() => { fetchFavoriteQuotes(); }, [fetchFavoriteQuotes]));
 
+  // On the web, Share opens the studio; native keeps the plain text share.
   const handleShare = async (quote: Quote) => {
+    if (Platform.OS === "web") { router.push(`/studio?q=${encodeURIComponent(quote.id)}` as any); return; }
     if (sharingId) return;
     setSharingId(quote.id);
     try { await shareQuote(quote); } finally { setSharingId(null); }
