@@ -1,4 +1,4 @@
--- PROPOSED, NOT APPLIED.
+-- Applied to sparklab-apps (zckbrbqxnibzmuesqsok) on 2026-11-13.
 --
 -- "Which days" in Settings has never had any effect: the chosen days are
 -- only stored on the device, and api/send-notifications.js never looks at
