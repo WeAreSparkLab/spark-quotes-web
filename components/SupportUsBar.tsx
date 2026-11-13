@@ -11,6 +11,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Platform, View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { usePathname } from "expo-router";
 import { LINKS, openCoffee, openTipChooser } from "../utils/support";
+import { C, F } from "../styles/theme";
 
 const VISITS_KEY = "supportBarVisits";
 const DISMISSED_UNTIL_KEY = "supportBarDismissedUntil";
@@ -57,9 +58,14 @@ export default function SupportUsBar() {
 
   if (Platform.OS !== "web" || !visible) return null;
   if (pathname?.startsWith("/settings")) return null; // Settings already has a support section
+  // The Living Worlds home keeps the scene clear; support lives in its
+  // "More" options there instead.
+  if (pathname === "/" || pathname === "") return null;
+  // never ask for money during a quiet minute
+  if (pathname?.startsWith("/reflect") || pathname?.startsWith("/journal")) return null;
 
-  // Lift above the bottom nav on the home route
-  const bottom = pathname === "/" ? 76 : 12;
+  // Lift above the bottom nav on the classic home
+  const bottom = pathname === "/classic" ? 76 : 12;
 
   return (
     <View style={[styles.wrap, { bottom }]} pointerEvents="box-none">
@@ -102,11 +108,11 @@ const styles = StyleSheet.create({
   },
   bar: {
     width: "100%",
-    maxWidth: 980,
-    backgroundColor: "rgba(20, 18, 40, 0.94)",
-    borderColor: "rgba(255,255,255,0.14)",
+    maxWidth: 640,
+    backgroundColor: "rgba(34, 28, 43, 0.94)",
+    borderColor: "rgba(247, 243, 237, 0.14)",
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 18,
     paddingVertical: 10,
     paddingHorizontal: 14,
     flexDirection: "row",
@@ -114,21 +120,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8,
   },
-  text: { color: "#C9CCE3", fontWeight: "600" },
-  ctaPrimary: {
-    backgroundColor: "#FFDD00",
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-  },
-  ctaPrimaryText: { color: "#222", fontWeight: "700" },
-  ctaSecondary: {
-    backgroundColor: "#6672E7",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-  },
-  ctaSecondaryText: { color: "#fff", fontWeight: "700" },
-  close: { paddingHorizontal: 6, paddingVertical: 4 },
-  closeText: { color: "#A6ACC9", fontSize: 15 },
+  text: { fontFamily: F.sans, color: "#F7F3ED", fontWeight: "500", fontSize: 14 },
+  ctaPrimary: { backgroundColor: C.gold, paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999 },
+  ctaPrimaryText: { fontFamily: F.sans, color: C.ink, fontWeight: "600" },
+  ctaSecondary: { borderWidth: 1, borderColor: "rgba(247, 243, 237, 0.35)", paddingVertical: 8, paddingHorizontal: 14, borderRadius: 999 },
+  ctaSecondaryText: { fontFamily: F.sans, color: "#F7F3ED", fontWeight: "600" },
+  close: { paddingHorizontal: 8, paddingVertical: 6 },
+  closeText: { color: "#CFC5D9", fontSize: 15 },
 });

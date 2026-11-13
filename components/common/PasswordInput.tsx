@@ -29,7 +29,7 @@ export default function PasswordInput({ style, ...rest }: PasswordInputProps) {
         accessibilityLabel={visible ? 'Hide password' : 'Show password'}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Ionicons name={visible ? 'eye-off' : 'eye'} size={20} color="#B0B0B0" />
+        <Ionicons name={visible ? 'eye-off' : 'eye'} size={20} color="#6A6274" />
       </TouchableOpacity>
     </View>
   );

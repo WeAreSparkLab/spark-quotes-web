@@ -121,9 +121,9 @@ serve(async (req) => {
               <p><strong>Review id:</strong> ${data.id}</p>
               <hr>
               <p>Approve it by running this in the SQL editor:</p>
-              <pre>select approve_quote('${data.id}');</pre>
+              <pre>select quotes.approve_quote('${data.id}');</pre>
               <p>Or reject it:</p>
-              <pre>select reject_quote('${data.id}');</pre>
+              <pre>select quotes.reject_quote('${data.id}');</pre>
             `,
           }),
         })

@@ -7,6 +7,7 @@ import {
 import { supabase } from '../../supabaseClient';
 import { useRouter } from 'expo-router';
 import PasswordInput from '../common/PasswordInput';
+import { C, S } from '../../styles/theme';
 
 type Phase = 'checking' | 'ready' | 'invalid' | 'success';
 
@@ -149,7 +150,7 @@ export default function ResetPasswordScreen() {
   if (phase === 'checking') {
     return (
       <SafeAreaView style={styles.container}>
-        <ActivityIndicator color="#6672E7" size="large" />
+        <ActivityIndicator color={C.accent} size="large" />
       </SafeAreaView>
     );
   }
@@ -158,7 +159,7 @@ export default function ResetPasswordScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Link Expired</Text>
+          <Text accessibilityRole="header" aria-level={1} style={styles.title}>Link Expired</Text>
           <Text style={styles.subtitle}>{errorMessage}</Text>
         </View>
 
@@ -185,10 +186,10 @@ export default function ResetPasswordScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.header}>
-          <Text style={styles.title}>Password Updated</Text>
+          <Text accessibilityRole="header" aria-level={1} style={styles.title}>Password Updated</Text>
           <Text style={styles.subtitle}>Taking you to sign in...</Text>
         </View>
-        <ActivityIndicator color="#6672E7" />
+        <ActivityIndicator color={C.accent} />
       </SafeAreaView>
     );
   }
@@ -196,7 +197,7 @@ export default function ResetPasswordScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Choose a New Password</Text>
+        <Text accessibilityRole="header" aria-level={1} style={styles.title}>Choose a New Password</Text>
         <Text style={styles.subtitle}>Enter and confirm your new password below.</Text>
       </View>
 
@@ -204,7 +205,7 @@ export default function ResetPasswordScreen() {
         <PasswordInput
           style={styles.input}
           placeholder="New password (min 8 characters)"
-          placeholderTextColor="#B0B0B0"
+          placeholderTextColor={C.inkSoft}
           value={newPassword}
           onChangeText={setNewPassword}
           onKeyPress={handleKeyPress}
@@ -212,7 +213,7 @@ export default function ResetPasswordScreen() {
         <PasswordInput
           style={styles.input}
           placeholder="Confirm new password"
-          placeholderTextColor="#B0B0B0"
+          placeholderTextColor={C.inkSoft}
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           onKeyPress={handleKeyPress}
@@ -226,7 +227,7 @@ export default function ResetPasswordScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#FFFFFF" />
+            <ActivityIndicator color={C.onAccent} />
           ) : (
             <Text style={styles.authButtonText}>Update Password</Text>
           )}
@@ -239,76 +240,31 @@ export default function ResetPasswordScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0E0F1D',
+    backgroundColor: C.paper,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
   },
   header: {
-    marginBottom: 40,
+    marginBottom: 28,
     alignItems: 'center',
+    maxWidth: 400,
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#B0B0B0',
-    textAlign: 'center',
-  },
+  title: { ...S.h1, fontSize: 34, lineHeight: 40, textAlign: 'center', marginBottom: 8 },
+  subtitle: { ...S.body, fontSize: 15.5, textAlign: 'center' },
   formContainer: {
+    ...S.card,
     width: '100%',
     maxWidth: 400,
-    backgroundColor: '#222034',
-    borderRadius: 15,
-    padding: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 10,
-    elevation: 8,
+    padding: 24,
+    borderRadius: 22,
   },
-  input: {
-    backgroundColor: '#333045',
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-    fontSize: 16,
-    color: '#FFFFFF',
-    marginBottom: 15,
-    borderColor: '#4D637D',
-    borderWidth: 1,
-  },
-  message: {
-    fontSize: 14,
-    color: '#FFD700', // Warning/info color
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  authButton: {
-    backgroundColor: '#6672E7', // Accent color
-    borderRadius: 12,
-    paddingVertical: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-  },
-  authButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  toggleButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  toggleButtonText: {
-    color: '#6672E7', // Accent color
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  input: { ...S.input, marginBottom: 14 },
+  message: { ...S.body, color: C.ink, textAlign: 'center', marginBottom: 14, fontWeight: '600' },
+  forgotPasswordButton: { alignSelf: 'flex-end', marginTop: -6, marginBottom: 14, paddingVertical: 4 },
+  forgotPasswordText: { ...S.link, fontSize: 13.5 },
+  authButton: { ...S.btn, ...S.btnPrimary, marginTop: 6 },
+  authButtonText: S.btnPrimaryText,
+  toggleButton: { marginTop: 18, alignItems: 'center', paddingVertical: 6 },
+  toggleButtonText: S.link,
 });

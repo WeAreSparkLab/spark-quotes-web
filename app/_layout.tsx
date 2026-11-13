@@ -108,6 +108,22 @@ useEffect(() => {
     }
   }, [userId]);
 
+  // The keyboard focus ring, added from code so it applies in development
+  // and production alike (styles inside <Head> only reach the static build).
+  useEffect(() => {
+    if (Platform.OS !== 'web' || document.getElementById('sq-focus-ring')) return;
+    const s = document.createElement('style');
+    s.id = 'sq-focus-ring';
+    s.textContent = `
+      [role="button"]:focus-visible, [role="radio"]:focus-visible, [role="checkbox"]:focus-visible,
+      [role="switch"]:focus-visible, [role="link"]:focus-visible, a:focus-visible,
+      input:focus-visible, textarea:focus-visible {
+        outline: 2px solid #A078B4 !important; outline-offset: 3px; border-radius: 12px;
+      }
+      @media (prefers-reduced-motion: reduce) { canvas, * { transition-duration: 0ms !important; } }`;
+    document.head.appendChild(s);
+  }, []);
+
   // Handle app visibility changes (PWA coming back from background)
   useEffect(() => {
     if (Platform.OS === 'web') {
@@ -158,7 +174,7 @@ useEffect(() => {
       <SupabaseContext.Provider value={{ supabaseInitialized, session, userId }}>
         <Head>
           <title>Spark Quotes — Your Daily Boost</title><link rel="manifest" href="/manifest.webmanifest" />
-          <meta name="theme-color" content="#0E0F1D" />
+          <meta name="theme-color" content="#F7F3ED" />
           {/* Google Search Console ownership verification — must stay in the
               served HTML or the property silently loses verification. */}
           <meta name="google-site-verification" content="621BkybwhnFbLzAG7YjO-oewxOlO7idlFUjP_c7M_Us" />
@@ -190,6 +206,14 @@ useEffect(() => {
           <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
           <meta name="apple-mobile-web-app-title" content="Spark Quotes" />
           <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+          {/* Living Worlds typography — the same pair as SparkLab Worlds.
+              display=swap, so the quote is readable in Georgia straight away. */}
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+          <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap"
+          />
           <style dangerouslySetInnerHTML={{
             __html: `
               html, body {
@@ -219,6 +243,14 @@ useEffect(() => {
               body {
                 overscroll-behavior: none;
               }
+              /* A clear, consistent keyboard focus ring on every control. */
+              [role="button"]:focus-visible, [role="radio"]:focus-visible, [role="checkbox"]:focus-visible,
+              [role="switch"]:focus-visible, [role="link"]:focus-visible, a:focus-visible,
+              input:focus-visible, textarea:focus-visible {
+                outline: 2px solid #A078B4 !important;
+                outline-offset: 3px;
+                border-radius: 12px;
+              }
             `
           }} />
         </Head>
@@ -226,18 +258,23 @@ useEffect(() => {
           screenOptions={{
             statusBarTranslucent: false,
             statusBarStyle: "light",
-            contentStyle: { backgroundColor: "#0C0A1A" },
+            contentStyle: { backgroundColor: "#F7F3ED" },
             headerTransparent: false,
-            headerStyle: { backgroundColor: "#0C0A1A" },
+            headerStyle: { backgroundColor: "#F7F3ED" },
             headerShadowVisible: false,
-            headerTintColor: "#FFFFFF",
-            headerTitleStyle: { color: "#FFFFFF", fontWeight: "800" },
+            headerTintColor: "#30283C",
+            headerTitleStyle: { color: "#30283C", fontWeight: "600" },
           }}
         >
           <Stack.Screen name="index" options={{ headerShown: false }} />
+          <Stack.Screen name="classic" options={{ headerShown: false }} />
           <Stack.Screen name="settings" options={{ headerShown: false }} />
           <Stack.Screen name="submitQuote" options={{ headerShown: false }} />
           <Stack.Screen name="favorites" options={{ headerShown: false }} />
+          <Stack.Screen name="topics" options={{ headerShown: false }} />
+          <Stack.Screen name="studio" options={{ headerShown: false }} />
+          <Stack.Screen name="reflect" options={{ headerShown: false }} />
+          <Stack.Screen name="journal" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
           <Stack.Screen name="reset-password" options={{ headerShown: false }} />
         </Stack>
@@ -250,6 +287,6 @@ useEffect(() => {
 const styles = StyleSheet.create({
   rootContainer: {
     flex: 1,
-    backgroundColor: '#0E0F1D',
+    backgroundColor: '#F7F3ED',
   },
 });
