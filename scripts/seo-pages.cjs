@@ -33,11 +33,13 @@ const dist = path.join(__dirname, '..', 'dist');
 const CATEGORY_NOTES = {
   productivity: {
     intro: 'These quotes touch on time, starting, finishing, and the choices that make work feel manageable.',
+    description: 'Productivity quotes about getting started, staying focused, and making work feel manageable. Find a line that helps you choose your next step.',
     heading: 'Choose a line for the task in front of you',
     prompt: 'Read through the quotes and pick one that helps you decide what to finish today. If a line only makes you feel pressured to do more, leave it behind. The useful one is the one that makes your next step clearer.',
   },
   creativity: {
     intro: 'These quotes are for the blank page, the first attempt, and the days when self-doubt gets loud.',
+    description: 'Creativity quotes for the blank page, the first attempt, and moments of self-doubt. Find a line to take into your next idea.',
     heading: 'Take one line into your next idea',
     prompt: 'Choose a quote that takes some pressure off the first draft. Save it for the next blank-page moment, then give yourself a few minutes to try an idea. You can come back to the rest when you need another nudge.',
   },
@@ -305,7 +307,7 @@ ${quotes
 
   return page({
     title: `${category} Quotes — ${quotes.length} to lift your day | Spark Quotes`,
-    description: `${quotes.length} hand-picked ${category.toLowerCase()} quotes. Read them all, save your favourites, and get one delivered each day.`,
+    description: note?.description || `${quotes.length} hand-picked ${category.toLowerCase()} quotes. Read them all, save your favourites, and get one delivered each day.`,
     canonical,
     jsonLd: {
       '@context': 'https://schema.org',
