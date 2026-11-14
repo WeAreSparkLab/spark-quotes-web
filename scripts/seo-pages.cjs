@@ -426,14 +426,8 @@ async function generate() {
   // Index
   fs.writeFileSync(path.join(dist, 'quotes.html'), indexPage(byCategory, quotes.length));
 
-  // Sitemap covering everything, replacing the hand-written stub
-  urls.push(
-    `${SITE}/topics`,
-    `${SITE}/favorites`,
-    `${SITE}/submitQuote`,
-    `${SITE}/settings`,
-    `${SITE}/privacy`
-  );
+  // Only public, useful pages belong in the discovery sitemap.
+  urls.push(`${SITE}/privacy`);
   fs.writeFileSync(path.join(dist, 'sitemap.txt'), `${[...new Set(urls)].join('\n')}\n`);
 
   console.log(

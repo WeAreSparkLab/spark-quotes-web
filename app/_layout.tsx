@@ -187,13 +187,13 @@ useEffect(() => {
           <meta property="og:image:width" content="1200" />
           <meta property="og:image:height" content="630" />
           <meta property="og:image:alt" content="Spark Quotes — one uplifting quote, every single day." />
-          <meta property="og:url" content="https://quotes.wearesparklab.com/" />
+          {pathname === '/' && <meta property="og:url" content="https://quotes.wearesparklab.com/" />}
           <meta property="fb:app_id" content="25675478425462421" />
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content="Spark Quotes — Your Daily Boost" />
           <meta name="twitter:description" content="One uplifting quote every time you open it. Save favorites and submit your own." />
           <meta name="twitter:image" content="https://quotes.wearesparklab.com/og.png" />
-          <link rel="canonical" href="https://quotes.wearesparklab.com/" />
+          {pathname === '/' ? <link rel="canonical" href="https://quotes.wearesparklab.com/" /> : <meta name="robots" content="noindex, follow" />}
           {/* Structured data is injected by scripts/postbuild.cjs:
               expo-router/head drops <script> tags, so declaring JSON-LD here
               never reached the served HTML. */}
