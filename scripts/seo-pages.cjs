@@ -28,6 +28,23 @@ const SUPABASE_KEY =
 
 const dist = path.join(__dirname, '..', 'dist');
 
+// Editorial context for topics with an established search audience. Keep
+// these notes useful to readers; the quote list still comes from live data.
+const CATEGORY_NOTES = {
+  productivity: {
+    intro: 'These quotes touch on time, starting, finishing, and the choices that make work feel manageable.',
+    description: 'Productivity quotes about getting started, staying focused, and making work feel manageable. Find a line that helps you choose your next step.',
+    heading: 'Choose a line for the task in front of you',
+    prompt: 'Read through the quotes and pick one that helps you decide what to finish today. If a line only makes you feel pressured to do more, leave it behind. The useful one is the one that makes your next step clearer.',
+  },
+  creativity: {
+    intro: 'These quotes are for the blank page, the first attempt, and the days when self-doubt gets loud.',
+    description: 'Creativity quotes for the blank page, the first attempt, and moments of self-doubt. Find a line to take into your next idea.',
+    heading: 'Take one line into your next idea',
+    prompt: 'Choose a quote that takes some pressure off the first draft. Save it for the next blank-page moment, then give yourself a few minutes to try an idea. You can come back to the rest when you need another nudge.',
+  },
+};
+
 // --- helpers ---------------------------------------------------------------
 
 function escapeHtml(s) {
@@ -256,6 +273,7 @@ ${related
 function categoryPage(category, quotes) {
   const catSlug = slugify(category);
   const canonical = `${SITE}/quotes/${catSlug}`;
+  const note = CATEGORY_NOTES[catSlug];
   const path = [
     { label: 'Home', href: '/' },
     { label: 'Quotes', href: '/quotes' },
@@ -265,12 +283,16 @@ function categoryPage(category, quotes) {
   const body = `
 ${crumbs(path)}
 <h1>${escapeHtml(category)} quotes</h1>
-<p style="color:#BFC4D6">${quotes.length} hand-picked ${escapeHtml(
+<p style="color:#BFC4D6">${note ? escapeHtml(note.intro) : `${quotes.length} hand-picked ${escapeHtml(
     category.toLowerCase()
-  )} quotes. Pick this topic in the app to get one each day.</p>
+  )} quotes. Pick this topic in the app to get one each day.`}</p>
 <div class="cta" style="justify-content:flex-start">
   <a class="btn btn-primary" href="/">Open Spark Quotes</a>
 </div>
+${note ? `<section aria-labelledby="category-note">
+  <h2 id="category-note">${escapeHtml(note.heading)}</h2>
+  <p>${escapeHtml(note.prompt)}</p>
+</section>` : ''}
 <h2>All ${escapeHtml(category.toLowerCase())} quotes</h2>
 <ul class="list">
 ${quotes
@@ -285,7 +307,7 @@ ${quotes
 
   return page({
     title: `${category} Quotes — ${quotes.length} to lift your day | Spark Quotes`,
-    description: `${quotes.length} hand-picked ${category.toLowerCase()} quotes. Read them all, save your favourites, and get one delivered each day.`,
+    description: note?.description || `${quotes.length} hand-picked ${category.toLowerCase()} quotes. Read them all, save your favourites, and get one delivered each day.`,
     canonical,
     jsonLd: {
       '@context': 'https://schema.org',
